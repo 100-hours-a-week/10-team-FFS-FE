@@ -1,0 +1,177 @@
+/* My Page Styles */
+
+.my-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background-color: var(--color-bg-primary);
+}
+
+.my-page__content {
+  flex: 1;
+  padding: var(--spacing-md);
+}
+
+/* 프로필 정보 */
+.my-page__profile {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.my-page__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--color-bg-tertiary);
+  flex-shrink: 0;
+}
+
+.my-page__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-page__avatar-placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+.my-page__info {
+  flex: 1;
+}
+
+.my-page__nickname {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.my-page__stats {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* 버튼 영역 */
+.my-page__buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.my-page__btn {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.my-page__btn:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+/* 피드 섹션 */
+.my-page__feeds {
+  margin-top: var(--spacing-md);
+}
+
+.my-page__feeds-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-md);
+}
+
+.my-page__feeds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  gap: var(--spacing-md);
+  color: var(--color-text-tertiary);
+}
+
+.my-page__feeds-empty button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.my-page__feeds-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-xs);
+}
+
+.my-page__feed-card {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.my-page__feed-image {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  background-color: var(--color-bg-tertiary);
+}
+
+.my-page__feed-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-page__feed-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.my-page__feed-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: var(--radius-sm);
+}
+
+.my-page__feed-stats {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.my-page__feed-stats span {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}

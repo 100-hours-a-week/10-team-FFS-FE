@@ -1,0 +1,39 @@
+/* AppLayout Component Styles */
+
+.app-layout {
+  min-height: 100vh;
+  background-color: var(--color-bg-secondary);
+}
+
+.app-layout__container {
+  position: relative;
+  width: 100%;
+  max-width: var(--max-width-app);
+  min-height: 100vh;
+  margin: 0 auto;
+  background-color: var(--color-bg-primary);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.app-layout__main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-layout__main--with-nav {
+  padding-bottom: var(--bottom-nav-height);
+}
+
+/* 큰 화면에서 양쪽 여백 효과 */
+@media (min-width: 430px) {
+  .app-layout {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .app-layout__container {
+    border-left: 1px solid var(--color-border-light);
+    border-right: 1px solid var(--color-border-light);
+  }
+}
