@@ -1,0 +1,430 @@
+/* Feed Detail Page Styles */
+
+.feed-detail-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background-color: var(--color-bg-primary);
+}
+
+.feed-detail-page__loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feed-detail-page__content {
+  flex: 1;
+  padding-bottom: 80px; /* 댓글 입력창 높이 */
+}
+
+/* 작성자 */
+.feed-detail-page__author {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  cursor: pointer;
+}
+
+.feed-detail-page__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.feed-detail-page__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-detail-page__avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-tertiary);
+}
+
+.feed-detail-page__nickname {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* 이미지 섹션 */
+.feed-detail-page__image-section {
+  position: relative;
+}
+
+.feed-detail-page__image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1/1;
+  background-color: var(--color-bg-tertiary);
+}
+
+.feed-detail-page__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-detail-page__image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+}
+
+/* 이미지 네비게이션 */
+.feed-detail-page__image-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.feed-detail-page__image-nav--prev {
+  left: var(--spacing-md);
+}
+
+.feed-detail-page__image-nav--next {
+  right: var(--spacing-md);
+}
+
+.feed-detail-page__image-indicators {
+  position: absolute;
+  bottom: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.feed-detail-page__image-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.feed-detail-page__image-indicator--active {
+  background-color: white;
+}
+
+/* 액션 버튼 */
+.feed-detail-page__actions {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.feed-detail-page__action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.feed-detail-page__action-btn--liked {
+  color: var(--color-like);
+}
+
+/* 좋아요 수 */
+.feed-detail-page__likes {
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+/* 본문 */
+.feed-detail-page__body {
+  padding: var(--spacing-sm) var(--spacing-md);
+  line-height: var(--line-height-relaxed);
+}
+
+.feed-detail-page__body-author {
+  font-weight: var(--font-weight-semibold);
+  margin-right: var(--spacing-xs);
+}
+
+.feed-detail-page__body-content {
+  color: var(--color-text-primary);
+}
+
+/* 착용 아이템 */
+.feed-detail-page__clothes {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.feed-detail-page__clothes-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-md);
+}
+
+.feed-detail-page__clothes-list {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.feed-detail-page__clothes-item {
+  flex-shrink: 0;
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.feed-detail-page__clothes-image {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--color-bg-tertiary);
+}
+
+.feed-detail-page__clothes-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-detail-page__clothes-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.feed-detail-page__clothes-name {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 시간 */
+.feed-detail-page__time {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* 댓글 섹션 */
+.feed-detail-page__comments {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.feed-detail-page__comments-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-md);
+}
+
+.feed-detail-page__comment {
+  margin-bottom: var(--spacing-md);
+}
+
+.feed-detail-page__comment-main {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.feed-detail-page__comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.feed-detail-page__comment-avatar--small {
+  width: 24px;
+  height: 24px;
+}
+
+.feed-detail-page__comment-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-detail-page__comment-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-tertiary);
+}
+
+.feed-detail-page__comment-content {
+  flex: 1;
+}
+
+.feed-detail-page__comment-header {
+  line-height: var(--line-height-normal);
+}
+
+.feed-detail-page__comment-author {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-right: var(--spacing-xs);
+}
+
+.feed-detail-page__comment-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.feed-detail-page__comment-meta {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.feed-detail-page__comment-meta button {
+  background: none;
+  border: none;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+}
+
+.feed-detail-page__comment-meta button:hover {
+  color: var(--color-text-secondary);
+}
+
+/* 대댓글 */
+.feed-detail-page__replies {
+  margin-left: 40px;
+  margin-top: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.feed-detail-page__reply {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* 댓글 입력 */
+.feed-detail-page__comment-input {
+  position: fixed;
+  bottom: var(--bottom-nav-height);
+  left: 0;
+  right: 0;
+  background-color: var(--color-bg-primary);
+  border-top: 1px solid var(--color-border-light);
+  z-index: var(--z-fixed);
+}
+
+@media (min-width: 430px) {
+  .feed-detail-page__comment-input {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-width-app);
+  }
+}
+
+.feed-detail-page__reply-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-bg-secondary);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.feed-detail-page__reply-indicator button {
+  background: none;
+  border: none;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+}
+
+.feed-detail-page__comment-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.feed-detail-page__comment-input-row input {
+  flex: 1;
+  height: 40px;
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.feed-detail-page__comment-input-row input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+/* 좋아요 목록 */
+.feed-detail-page__likes-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-detail-page__likes-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  cursor: pointer;
+}
+
+.feed-detail-page__likes-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.feed-detail-page__likes-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-detail-page__likes-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-tertiary);
+}

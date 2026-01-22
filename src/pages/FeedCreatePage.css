@@ -1,0 +1,282 @@
+/* Feed Create Page Styles */
+
+.feed-create-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background-color: var(--color-bg-primary);
+}
+
+.feed-create-page__content {
+  flex: 1;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.feed-create-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.feed-create-page__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+/* 이미지 업로드 */
+.feed-create-page__images {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  padding-bottom: var(--spacing-sm);
+  -webkit-overflow-scrolling: touch;
+}
+
+.feed-create-page__images::-webkit-scrollbar {
+  height: 4px;
+}
+
+.feed-create-page__image-add {
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-secondary);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.feed-create-page__image-add:hover {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border-dark);
+}
+
+.feed-create-page__image-item {
+  position: relative;
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.feed-create-page__image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-create-page__image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.feed-create-page__image-main {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  color: white;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+
+/* 내용 입력 */
+.feed-create-page__textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  font-size: var(--font-size-md);
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  resize: none;
+}
+
+.feed-create-page__textarea:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.feed-create-page__textarea::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+/* 옷 태그 */
+.feed-create-page__clothes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feed-create-page__clothes-add-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.feed-create-page__clothes-add-btn:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.feed-create-page__clothes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.feed-create-page__clothes-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.feed-create-page__clothes-image {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: var(--color-bg-tertiary);
+}
+
+.feed-create-page__clothes-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-create-page__clothes-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+}
+
+.feed-create-page__clothes-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-create-page__clothes-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+}
+
+.feed-create-page__clothes-remove:hover {
+  color: var(--color-error);
+}
+
+/* 옷 선택 모달 */
+.feed-create-page__clothes-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: 60vh;
+}
+
+.feed-create-page__clothes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+  overflow-y: auto;
+  padding-bottom: var(--spacing-md);
+}
+
+.feed-create-page__clothes-grid-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+.feed-create-page__clothes-grid-image {
+  position: relative;
+  aspect-ratio: 1/1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--color-bg-tertiary);
+}
+
+.feed-create-page__clothes-grid-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-create-page__clothes-grid-item--selected .feed-create-page__clothes-grid-image {
+  border: 2px solid var(--color-primary);
+}
+
+.feed-create-page__clothes-grid-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+}
+
+.feed-create-page__clothes-grid-name {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-create-page__clothes-modal-footer {
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+}

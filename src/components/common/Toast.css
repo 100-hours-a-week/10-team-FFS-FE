@@ -1,0 +1,53 @@
+/* Toast Component Styles */
+
+.toast-container {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height) + var(--spacing-lg));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  z-index: var(--z-toast);
+  width: calc(100% - var(--spacing-lg) * 2);
+  max-width: calc(var(--max-width-app) - var(--spacing-lg) * 2);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: rgba(50, 50, 50, 0.95);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  backdrop-filter: blur(10px);
+  animation: toastIn 0.3s ease;
+  box-shadow: var(--shadow-lg);
+}
+
+.toast__message {
+  line-height: var(--line-height-normal);
+}
+
+/* Toast Types - 모두 동일한 디자인 (요청에 따라) */
+.toast--info,
+.toast--success,
+.toast--warning,
+.toast--error {
+  background-color: rgba(50, 50, 50, 0.95);
+}
+
+/* Animations */
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,145 @@
+/* Closet List Page Styles */
+
+.closet-list-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background-color: var(--color-bg-primary);
+}
+
+/* 헤더 */
+.closet-list-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-light);
+  position: sticky;
+  top: 0;
+  background-color: var(--color-bg-primary);
+  z-index: var(--z-sticky);
+}
+
+.closet-list-page__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.closet-list-page__add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.closet-list-page__add-btn:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+/* 카테고리 필터 */
+.closet-list-page__categories {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.closet-list-page__categories::-webkit-scrollbar {
+  display: none;
+}
+
+.closet-list-page__category {
+  flex-shrink: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.closet-list-page__category:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.closet-list-page__category--active {
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* 콘텐츠 영역 */
+.closet-list-page__content {
+  flex: 1;
+  padding: var(--spacing-md);
+}
+
+/* 빈 상태 */
+.closet-list-page__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-md);
+}
+
+/* 옷 그리드 */
+.closet-list-page__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.closet-list-page__item {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: transform var(--transition-fast);
+}
+
+.closet-list-page__item:active {
+  transform: scale(0.98);
+}
+
+.closet-list-page__item-image {
+  position: relative;
+  width: 100%;
+  padding-top: 100%; /* 1:1 비율 */
+  background-color: var(--color-bg-tertiary);
+}
+
+.closet-list-page__item-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.closet-list-page__item-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  background-color: var(--color-bg-tertiary);
+}
