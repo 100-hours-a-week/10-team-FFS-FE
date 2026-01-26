@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { FeedCardSkeleton } from '../components/common';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
-import { mockFeeds } from '../mocks/data';
+import { getFeeds } from '../api';
 import { formatNumber } from '../utils/helpers';
 import { IoHeart } from 'react-icons/io5';
 import { IoChatbubbleOutline } from 'react-icons/io5';
@@ -12,19 +12,32 @@ import './FeedListPage.css';
 const FeedListPage = () => {
   const navigate = useNavigate();
 
-  // API 연동 필요: 피드 목록 조회
+  // 피드 목록 조회 API
   const fetchFeeds = useCallback(async (cursor) => {
-    // 목업 데이터 시뮬레이션
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const startIndex = cursor ? mockFeeds.findIndex(f => f.id === cursor) + 1 : 0;
-    const pageData = mockFeeds.slice(startIndex, startIndex + 12);
-    
-    return {
-      data: pageData,
-      nextCursor: pageData.length > 0 ? pageData[pageData.length - 1].id : null,
-      hasMore: startIndex + 12 < mockFeeds.length,
-    };
+    try {
+      const response = await getFeeds(cursor, 12);
+      const { items, pageInfo } = response.data;
+      
+      return {
+        data: items.map(item => ({
+          id: item.feedId,
+          primaryImageUrl: item.primaryImageUrl,
+          likeCount: item.likeCount,
+          commentCount: item.commentCount,
+          author: {
+            id: item.userProfile.userId,
+            profileImage: item.userProfile.userProfileImageUrl,
+            nickname: item.userProfile.userNickname,
+          },
+          isLiked: item.isLiked,
+        })),
+        nextCursor: pageInfo.hasNextPage ? pageInfo.nextCursor : null,
+        hasMore: pageInfo.hasNextPage,
+      };
+    } catch (err) {
+      console.error('Failed to fetch feeds:', err);
+      throw err;
+    }
   }, []);
 
   const { 
@@ -57,18 +70,11 @@ const FeedListPage = () => {
                 onClick={() => handleFeedClick(feed.id)}
               >
                 <div className="feed-list-page__item-image">
-                  {feed.images[0] ? (
-                    <img src={feed.images[0]} alt="피드 이미지" />
+                  {feed.primaryImageUrl ? (
+                    <img src={feed.primaryImageUrl} alt="피드 이미지" />
                   ) : (
                     <div className="feed-list-page__item-placeholder">
                       사진
-                    </div>
-                  )}
-                  
-                  {/* 여러 이미지 표시 */}
-                  {feed.images.length > 1 && (
-                    <div className="feed-list-page__item-multi">
-                      <span>+{feed.images.length - 1}</span>
                     </div>
                   )}
                 </div>
@@ -89,7 +95,7 @@ const FeedListPage = () => {
                   </div>
                   
                   <div className="feed-list-page__item-stats">
-                    <span className="feed-list-page__item-stat">
+                    <span className={`feed-list-page__item-stat ${feed.isLiked ? 'feed-list-page__item-stat--liked' : ''}`}>
                       <IoHeart size={14} />
                       {formatNumber(feed.likeCount)}
                     </span>
