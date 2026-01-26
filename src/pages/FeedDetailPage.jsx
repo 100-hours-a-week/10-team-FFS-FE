@@ -48,10 +48,8 @@ const FeedDetailPage = () => {
   const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false);
   const [loadingRepliesFor, setLoadingRepliesFor] = useState(null);
   
-  // 댓글 수정 관련 상태
-  const [editingComment, setEditingComment] = useState(null); // { id, content, isReply, parentId }
-  const [editCommentText, setEditCommentText] = useState('');
-  const [isEditingComment, setIsEditingComment] = useState(false);
+  // 댓글 수정 관련 상태 (모달 대신 입력창 사용)
+  const [editingComment, setEditingComment] = useState(null); // { id, isReply, parentId }
   
   // 좋아요 목록 관련 상태
   const [likedUsers, setLikedUsers] = useState([]);
@@ -63,8 +61,11 @@ const FeedDetailPage = () => {
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditCommentModal, setShowEditCommentModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // 500자 넘으면 경고
+  const MAX_CONTENT_LENGTH = 500;
+  const [warned, setWarned] = useState(false);
 
   // 피드 데이터 로드
   useEffect(() => {
@@ -317,148 +318,169 @@ const FeedDetailPage = () => {
     }
   };
 
+  // 500자 넘으면 경고해주는 함수
+  const handleContentChange = (e) => {
+    const value = e.target.value;
+    setCommentText(value);
+
+    if (value.length === MAX_CONTENT_LENGTH && !warned) {
+      showError('내용은 최대 500자까지 입력할 수 있어요.');
+      setWarned(true);
+    }
+
+    if (value.length < MAX_CONTENT_LENGTH && warned) {
+      setWarned(false);
+    }
+  };
+
+  // 댓글 작성/수정 제출
   const handleSubmitComment = async () => {
     if (!commentText.trim()) return;
 
+    if (commentText.length > MAX_CONTENT_LENGTH) {
+      showError(`댓글은 최대 ${MAX_CONTENT_LENGTH}자까지 입력 가능합니다.`);
+      return;
+    }
+
     setIsSubmittingComment(true);
     try {
-      const response = await createComment(
-        feedId, 
-        commentText.trim(), 
-        replyTo?.commentId || null
-      );
-      
-      const newCommentData = {
-        id: response.data.commentId,
-        content: response.data.content,
-        likeCount: response.data.likeCount,
-        isLiked: response.data.isLiked,
-        isOwner: response.data.isOwner,
-        modifiedAt: response.data.modifiedAt,
-        author: {
-          id: response.data.userProfile.userId,
-          profileImage: response.data.userProfile.userProfileImageUrl,
-          nickname: response.data.userProfile.userNickname,
-        },
-      };
+      if (editingComment) {
+        // 수정 모드
+        const response = await updateComment(feedId, editingComment.id, commentText.trim());
+        
+        if (editingComment.isReply && editingComment.parentId) {
+          // 대댓글 수정
+          setComments(prev => prev.map(c => {
+            if (c.id === editingComment.parentId) {
+              return {
+                ...c,
+                replies: c.replies.map(r => {
+                  if (r.id === editingComment.id) {
+                    return {
+                      ...r,
+                      content: response.data.content,
+                      modifiedAt: response.data.modifiedAt,
+                    };
+                  }
+                  return r;
+                }),
+              };
+            }
+            return c;
+          }));
+        } else {
+          // 일반 댓글 수정
+          setComments(prev => prev.map(c => {
+            if (c.id === editingComment.id) {
+              return {
+                ...c,
+                content: response.data.content,
+                modifiedAt: response.data.modifiedAt,
+              };
+            }
+            return c;
+          }));
+        }
 
-      if (replyTo) {
-        setComments(prev => prev.map(comment => {
-          if (comment.id === replyTo.commentId) {
-            return {
-              ...comment,
-              replies: [...comment.replies, newCommentData],
-              repliesLoaded: true,
-              replyInfo: {
-                ...comment.replyInfo,
-                hasReplies: true,
-                replyCount: comment.replyInfo.replyCount + 1,
-              },
-            };
-          }
-          return comment;
-        }));
+        setEditingComment(null);
+        setCommentText('');
+        success('댓글이 수정되었습니다.');
       } else {
-        const newComment = {
-          ...newCommentData,
-          replyInfo: response.data.replyInfo || { hasReplies: false, replyCount: 0 },
-          replies: [],
-          repliesLoaded: false,
-          repliesCursor: null,
-          hasMoreReplies: false,
+        // 작성 모드
+        const response = await createComment(
+          feedId, 
+          commentText.trim(), 
+          replyTo?.commentId || null
+        );
+        
+        const newCommentData = {
+          id: response.data.commentId,
+          content: response.data.content,
+          likeCount: response.data.likeCount,
+          isLiked: response.data.isLiked,
+          isOwner: response.data.isOwner,
+          modifiedAt: response.data.modifiedAt,
+          author: {
+            id: response.data.userProfile.userId,
+            profileImage: response.data.userProfile.userProfileImageUrl,
+            nickname: response.data.userProfile.userNickname,
+          },
         };
-        setComments(prev => [newComment, ...prev]);
-      }
 
-      setCommentText('');
-      setReplyTo(null);
-      success('댓글이 작성되었습니다.');
+        if (replyTo) {
+          setComments(prev => prev.map(comment => {
+            if (comment.id === replyTo.commentId) {
+              return {
+                ...comment,
+                replies: [...comment.replies, newCommentData],
+                repliesLoaded: true,
+                replyInfo: {
+                  ...comment.replyInfo,
+                  hasReplies: true,
+                  replyCount: comment.replyInfo.replyCount + 1,
+                },
+              };
+            }
+            return comment;
+          }));
+        } else {
+          const newComment = {
+            ...newCommentData,
+            replyInfo: response.data.replyInfo || { hasReplies: false, replyCount: 0 },
+            replies: [],
+            repliesLoaded: false,
+            repliesCursor: null,
+            hasMoreReplies: false,
+          };
+          setComments(prev => [newComment, ...prev]);
+        }
+
+        setCommentText('');
+        setReplyTo(null);
+        success('댓글이 작성되었습니다.');
+      }
     } catch (err) {
-      console.error('Failed to create comment:', err);
+      console.error('Failed to submit comment:', err);
       if (err.message === 'content_too_large') {
         showError('댓글이 너무 깁니다.');
+      } else if (err.message === 'comment_edit_denied') {
+        showError('댓글을 수정할 권한이 없습니다.');
       } else {
-        showError('댓글 작성에 실패했습니다.');
+        showError(editingComment ? '댓글 수정에 실패했습니다.' : '댓글 작성에 실패했습니다.');
       }
     } finally {
       setIsSubmittingComment(false);
     }
   };
 
+  // 답글 달기
   const handleReply = (comment) => {
+    // 수정 모드 취소
+    setEditingComment(null);
     setReplyTo({ commentId: comment.id, nickname: comment.author.nickname });
+    setCommentText('');
     commentInputRef.current?.focus();
   };
 
   // 댓글 수정 시작
   const handleStartEditComment = (comment, isReply = false, parentId = null) => {
+    // 답글 모드 취소
+    setReplyTo(null);
     setEditingComment({ 
       id: comment.id, 
       isReply, 
-      parentId 
+      parentId,
+      nickname: comment.author.nickname,
     });
-    setEditCommentText(comment.content);
-    setShowEditCommentModal(true);
+    setCommentText(comment.content);
+    commentInputRef.current?.focus();
   };
 
-  // 댓글 수정 제출
-  const handleSubmitEditComment = async () => {
-    if (!editCommentText.trim() || !editingComment) return;
-
-    setIsEditingComment(true);
-    try {
-      const response = await updateComment(feedId, editingComment.id, editCommentText.trim());
-      
-      if (editingComment.isReply && editingComment.parentId) {
-        // 대댓글 수정
-        setComments(prev => prev.map(c => {
-          if (c.id === editingComment.parentId) {
-            return {
-              ...c,
-              replies: c.replies.map(r => {
-                if (r.id === editingComment.id) {
-                  return {
-                    ...r,
-                    content: response.data.content,
-                    modifiedAt: response.data.modifiedAt,
-                  };
-                }
-                return r;
-              }),
-            };
-          }
-          return c;
-        }));
-      } else {
-        // 일반 댓글 수정
-        setComments(prev => prev.map(c => {
-          if (c.id === editingComment.id) {
-            return {
-              ...c,
-              content: response.data.content,
-              modifiedAt: response.data.modifiedAt,
-            };
-          }
-          return c;
-        }));
-      }
-
-      setShowEditCommentModal(false);
-      setEditingComment(null);
-      setEditCommentText('');
-      success('댓글이 수정되었습니다.');
-    } catch (err) {
-      console.error('Failed to edit comment:', err);
-      if (err.message === 'content_too_large') {
-        showError('댓글이 너무 깁니다.');
-      } else if (err.message === 'comment_edit_denied') {
-        showError('댓글을 수정할 권한이 없습니다.');
-      } else {
-        showError('댓글 수정에 실패했습니다.');
-      }
-    } finally {
-      setIsEditingComment(false);
-    }
+  // 수정/답글 취소
+  const handleCancelCommentAction = () => {
+    setEditingComment(null);
+    setReplyTo(null);
+    setCommentText('');
   };
 
   const handleDeleteComment = async () => {
@@ -527,6 +549,19 @@ const FeedDetailPage = () => {
       return comment.replyInfo.replyCount;
     }
     return comment.replyInfo.replyCount - comment.replies.length;
+  };
+
+  // 입력창 placeholder 텍스트
+  const getInputPlaceholder = () => {
+    if (editingComment) return '댓글을 수정하세요...';
+    if (replyTo) return '답글을 입력하세요...';
+    return '댓글을 입력하세요...';
+  };
+
+  // 입력창 버튼 텍스트
+  const getSubmitButtonText = () => {
+    if (editingComment) return '수정';
+    return '게시';
   };
 
   const feedActions = feed?.isOwner ? [
@@ -839,20 +874,27 @@ const FeedDetailPage = () => {
 
       {/* 댓글 입력 */}
       <div className="feed-detail-page__comment-input">
-        {replyTo && (
+        {/* 답글 또는 수정 중 표시 */}
+        {(replyTo || editingComment) && (
           <div className="feed-detail-page__reply-indicator">
-            <span>@{replyTo.nickname}에게 답글 작성 중</span>
-            <button onClick={() => setReplyTo(null)}>취소</button>
+            <span>
+              {editingComment 
+                ? '댓글 수정 중' 
+                : `@${replyTo.nickname}에게 답글 작성 중`
+              }
+            </span>
+            <button onClick={handleCancelCommentAction}>취소</button>
           </div>
         )}
         <div className="feed-detail-page__comment-input-row">
           <input
             ref={commentInputRef}
             type="text"
-            placeholder={replyTo ? '답글을 입력하세요...' : '댓글을 입력하세요...'}
+            placeholder={getInputPlaceholder()}
             value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
+            onChange={handleContentChange}
             onKeyPress={(e) => e.key === 'Enter' && handleSubmitComment()}
+            maxLength={MAX_CONTENT_LENGTH}
           />
           <Button 
             size="small"
@@ -860,50 +902,10 @@ const FeedDetailPage = () => {
             loading={isSubmittingComment}
             disabled={!commentText.trim()}
           >
-            게시
+            {getSubmitButtonText()}
           </Button>
         </div>
       </div>
-
-      {/* 댓글 수정 모달 */}
-      <Modal
-        isOpen={showEditCommentModal}
-        onClose={() => {
-          setShowEditCommentModal(false);
-          setEditingComment(null);
-          setEditCommentText('');
-        }}
-        title="댓글 수정"
-      >
-        <div className="feed-detail-page__edit-comment-modal">
-          <textarea
-            className="feed-detail-page__edit-comment-textarea"
-            value={editCommentText}
-            onChange={(e) => setEditCommentText(e.target.value)}
-            placeholder="댓글을 입력하세요..."
-            rows={4}
-          />
-          <div className="feed-detail-page__edit-comment-actions">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setShowEditCommentModal(false);
-                setEditingComment(null);
-                setEditCommentText('');
-              }}
-            >
-              취소
-            </Button>
-            <Button
-              onClick={handleSubmitEditComment}
-              loading={isEditingComment}
-              disabled={!editCommentText.trim()}
-            >
-              수정
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* 좋아요 목록 모달 */}
       <Modal

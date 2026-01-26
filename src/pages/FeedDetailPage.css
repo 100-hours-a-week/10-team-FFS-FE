@@ -285,6 +285,8 @@
 
 .feed-detail-page__comment-content {
   flex: 1;
+  min-width: 0; /* flex item이 줄어들 수 있게 */
+  overflow-wrap: break-word;
 }
 
 .feed-detail-page__comment-header {
@@ -300,6 +302,8 @@
 .feed-detail-page__comment-text {
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .feed-detail-page__comment-meta {
