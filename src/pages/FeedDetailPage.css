@@ -428,3 +428,34 @@
   height: 100%;
   background-color: var(--color-bg-tertiary);
 }
+
+/* 답글 보기 버튼 */
+.feed-detail-page__view-replies {
+  display: block;
+  margin-left: 48px;
+  margin-top: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-secondary, #65676b);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.feed-detail-page__view-replies:hover {
+  color: var(--text-primary, #1c1e21);
+}
+
+.feed-detail-page__view-replies:disabled {
+  color: var(--text-tertiary, #8a8d91);
+  cursor: not-allowed;
+}
+
+/* 댓글 없음 */
+.feed-detail-page__comments-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-secondary, #65676b);
+  font-size: 14px;
+}

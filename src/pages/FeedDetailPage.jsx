@@ -535,18 +535,22 @@ const FeedDetailPage = () => {
 
             {feed.images.length > 1 && (
               <>
-                <button 
-                  className="feed-detail-page__image-nav feed-detail-page__image-nav--prev"
-                  onClick={handlePrevImage}
-                >
-                  <IoChevronBack size={24} />
-                </button>
-                <button 
-                  className="feed-detail-page__image-nav feed-detail-page__image-nav--next"
-                  onClick={handleNextImage}
-                >
-                  <IoChevronForward size={24} />
-                </button>
+                {currentImageIndex > 0 && (
+                  <button 
+                    className="feed-detail-page__image-nav feed-detail-page__image-nav--prev"
+                    onClick={handlePrevImage}
+                  >
+                    <IoChevronBack size={24} />
+                  </button>
+                )}
+                {currentImageIndex < feed.images.length - 1 && (
+                  <button 
+                    className="feed-detail-page__image-nav feed-detail-page__image-nav--next"
+                    onClick={handleNextImage}
+                  >
+                    <IoChevronForward size={24} />
+                  </button>
+                )}
 
                 <div className="feed-detail-page__image-indicators">
                   {feed.images.map((_, index) => (
@@ -623,16 +627,15 @@ const FeedDetailPage = () => {
 
         {/* 댓글 섹션 */}
         <div className="feed-detail-page__comments">
-          <h3 className="feed-detail-page__comments-title">
-            댓글
-          </h3>
-
           {comments.length === 0 ? (
             <div className="feed-detail-page__comments-empty">
               아직 댓글이 없습니다.
             </div>
           ) : (
             <>
+              <h3 className="feed-detail-page__comments-title">
+                댓글
+              </h3>
               {comments.map(comment => (
                 <div key={comment.id} className="feed-detail-page__comment">
                   <div className="feed-detail-page__comment-main">
