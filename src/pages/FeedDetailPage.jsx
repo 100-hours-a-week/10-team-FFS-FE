@@ -13,6 +13,7 @@ import {
   getComments,
   getReplies,
   createComment,
+  updateComment,
   deleteComment,
   likeComment,
   unlikeComment
@@ -45,7 +46,12 @@ const FeedDetailPage = () => {
   const [commentsCursor, setCommentsCursor] = useState(null);
   const [hasMoreComments, setHasMoreComments] = useState(false);
   const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false);
-  const [loadingRepliesFor, setLoadingRepliesFor] = useState(null); // 대댓글 로딩 중인 댓글 ID
+  const [loadingRepliesFor, setLoadingRepliesFor] = useState(null);
+  
+  // 댓글 수정 관련 상태
+  const [editingComment, setEditingComment] = useState(null); // { id, content, isReply, parentId }
+  const [editCommentText, setEditCommentText] = useState('');
+  const [isEditingComment, setIsEditingComment] = useState(false);
   
   // 좋아요 목록 관련 상태
   const [likedUsers, setLikedUsers] = useState([]);
@@ -57,6 +63,7 @@ const FeedDetailPage = () => {
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditCommentModal, setShowEditCommentModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   // 피드 데이터 로드
@@ -89,7 +96,6 @@ const FeedDetailPage = () => {
         setIsLiked(data.isLiked);
         setLikeCount(data.likeCount);
         
-        // 댓글 로드
         await loadComments();
       } catch (err) {
         console.error('Failed to load feed:', err);
@@ -123,12 +129,11 @@ const FeedDetailPage = () => {
         author: {
           id: item.userProfile.userId,
           profileImage: item.userProfile.userProfileImageUrl,
-          nickname: item.userProfile.nickname,
+          nickname: item.userProfile.userNickname,
         },
-        // 대댓글 관련 정보
         replyInfo: item.replyInfo || { hasReplies: false, replyCount: 0 },
         replies: [],
-        repliesLoaded: false, // 대댓글을 한 번이라도 로드했는지
+        repliesLoaded: false,
         repliesCursor: null,
         hasMoreReplies: false,
       }));
@@ -166,7 +171,7 @@ const FeedDetailPage = () => {
         author: {
           id: item.userProfile.userId,
           profileImage: item.userProfile.userProfileImageUrl,
-          nickname: item.userProfile.nickname,
+          nickname: item.userProfile.userNickname,
         },
       }));
       
@@ -181,7 +186,6 @@ const FeedDetailPage = () => {
             repliesLoaded: true,
             repliesCursor: pageInfo.nextCursor,
             hasMoreReplies: pageInfo.hasNextPage && remainingCount > 0,
-            // 남은 대댓글 수 업데이트
             remainingRepliesCount: remainingCount > 0 ? remainingCount : 0,
           };
         }
@@ -205,7 +209,7 @@ const FeedDetailPage = () => {
       const mappedUsers = items.map(item => ({
         id: item.userProfile.userId,
         profileImage: item.userProfile.userProfileImageUrl,
-        nickname: item.userProfile.nickname,
+        nickname: item.userProfile.userNickname,
         isFollowing: item.isFollowing,
       }));
       
@@ -224,7 +228,6 @@ const FeedDetailPage = () => {
     }
   };
 
-  // 좋아요 모달 열기
   const handleOpenLikesModal = () => {
     setShowLikesModal(true);
     setLikedUsers([]);
@@ -232,20 +235,14 @@ const FeedDetailPage = () => {
     loadLikes();
   };
 
-  // 이미지 네비게이션
   const handlePrevImage = () => {
-    setCurrentImageIndex(prev => 
-      prev === 0 ? feed.images.length - 1 : prev - 1
-    );
+    setCurrentImageIndex(prev => prev - 1);
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex(prev => 
-      prev === feed.images.length - 1 ? 0 : prev + 1
-    );
+    setCurrentImageIndex(prev => prev + 1);
   };
 
-  // 좋아요 토글
   const handleLike = async () => {
     try {
       if (isLiked) {
@@ -263,10 +260,8 @@ const FeedDetailPage = () => {
     }
   };
 
-  // 댓글 좋아요 토글
   const handleCommentLike = async (commentId, isReply = false, parentCommentId = null) => {
     try {
-      // 현재 좋아요 상태 찾기
       let currentIsLiked = false;
       
       if (isReply && parentCommentId) {
@@ -285,7 +280,6 @@ const FeedDetailPage = () => {
         response = await likeComment(feedId, commentId);
       }
 
-      // 상태 업데이트
       if (isReply && parentCommentId) {
         setComments(prev => prev.map(c => {
           if (c.id === parentCommentId) {
@@ -323,7 +317,6 @@ const FeedDetailPage = () => {
     }
   };
 
-  // 댓글 작성
   const handleSubmitComment = async () => {
     if (!commentText.trim()) return;
 
@@ -345,12 +338,11 @@ const FeedDetailPage = () => {
         author: {
           id: response.data.userProfile.userId,
           profileImage: response.data.userProfile.userProfileImageUrl,
-          nickname: response.data.userProfile.nickname,
+          nickname: response.data.userProfile.userNickname,
         },
       };
 
       if (replyTo) {
-        // 대댓글 추가 - 해당 부모 댓글에만 추가
         setComments(prev => prev.map(comment => {
           if (comment.id === replyTo.commentId) {
             return {
@@ -367,7 +359,6 @@ const FeedDetailPage = () => {
           return comment;
         }));
       } else {
-        // 일반 댓글 추가
         const newComment = {
           ...newCommentData,
           replyInfo: response.data.replyInfo || { hasReplies: false, replyCount: 0 },
@@ -394,13 +385,82 @@ const FeedDetailPage = () => {
     }
   };
 
-  // 답글 달기
   const handleReply = (comment) => {
     setReplyTo({ commentId: comment.id, nickname: comment.author.nickname });
     commentInputRef.current?.focus();
   };
 
-  // 댓글 삭제
+  // 댓글 수정 시작
+  const handleStartEditComment = (comment, isReply = false, parentId = null) => {
+    setEditingComment({ 
+      id: comment.id, 
+      isReply, 
+      parentId 
+    });
+    setEditCommentText(comment.content);
+    setShowEditCommentModal(true);
+  };
+
+  // 댓글 수정 제출
+  const handleSubmitEditComment = async () => {
+    if (!editCommentText.trim() || !editingComment) return;
+
+    setIsEditingComment(true);
+    try {
+      const response = await updateComment(feedId, editingComment.id, editCommentText.trim());
+      
+      if (editingComment.isReply && editingComment.parentId) {
+        // 대댓글 수정
+        setComments(prev => prev.map(c => {
+          if (c.id === editingComment.parentId) {
+            return {
+              ...c,
+              replies: c.replies.map(r => {
+                if (r.id === editingComment.id) {
+                  return {
+                    ...r,
+                    content: response.data.content,
+                    modifiedAt: response.data.modifiedAt,
+                  };
+                }
+                return r;
+              }),
+            };
+          }
+          return c;
+        }));
+      } else {
+        // 일반 댓글 수정
+        setComments(prev => prev.map(c => {
+          if (c.id === editingComment.id) {
+            return {
+              ...c,
+              content: response.data.content,
+              modifiedAt: response.data.modifiedAt,
+            };
+          }
+          return c;
+        }));
+      }
+
+      setShowEditCommentModal(false);
+      setEditingComment(null);
+      setEditCommentText('');
+      success('댓글이 수정되었습니다.');
+    } catch (err) {
+      console.error('Failed to edit comment:', err);
+      if (err.message === 'content_too_large') {
+        showError('댓글이 너무 깁니다.');
+      } else if (err.message === 'comment_edit_denied') {
+        showError('댓글을 수정할 권한이 없습니다.');
+      } else {
+        showError('댓글 수정에 실패했습니다.');
+      }
+    } finally {
+      setIsEditingComment(false);
+    }
+  };
+
   const handleDeleteComment = async () => {
     if (!deleteTarget) return;
 
@@ -440,7 +500,6 @@ const FeedDetailPage = () => {
     }
   };
 
-  // 피드 삭제
   const handleDeleteFeed = async () => {
     try {
       await deleteFeed(feedId);
@@ -456,7 +515,6 @@ const FeedDetailPage = () => {
     }
   };
 
-  // 더 많은 댓글 로드
   const handleLoadMoreComments = async () => {
     if (isLoadingMoreComments || !hasMoreComments) return;
     setIsLoadingMoreComments(true);
@@ -464,7 +522,6 @@ const FeedDetailPage = () => {
     setIsLoadingMoreComments(false);
   };
 
-  // 남은 대댓글 수 계산
   const getRemainingRepliesCount = (comment) => {
     if (!comment.repliesLoaded) {
       return comment.replyInfo.replyCount;
@@ -633,9 +690,7 @@ const FeedDetailPage = () => {
             </div>
           ) : (
             <>
-              <h3 className="feed-detail-page__comments-title">
-                댓글
-              </h3>
+              <h3 className="feed-detail-page__comments-title">댓글</h3>
               {comments.map(comment => (
                 <div key={comment.id} className="feed-detail-page__comment">
                   <div className="feed-detail-page__comment-main">
@@ -666,20 +721,25 @@ const FeedDetailPage = () => {
                         </button>
                         <button onClick={() => handleReply(comment)}>답글 달기</button>
                         {comment.isOwner && (
-                          <button 
-                            onClick={() => {
-                              setDeleteTarget({ type: 'comment', id: comment.id });
-                              setShowDeleteModal(true);
-                            }}
-                          >
-                            삭제
-                          </button>
+                          <>
+                            <button onClick={() => handleStartEditComment(comment)}>
+                              수정
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setDeleteTarget({ type: 'comment', id: comment.id });
+                                setShowDeleteModal(true);
+                              }}
+                            >
+                              삭제
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* 답글 보기 버튼 (대댓글이 있고 아직 로드 안 했을 때) */}
+                  {/* 답글 보기 버튼 */}
                   {comment.replyInfo.hasReplies && !comment.repliesLoaded && (
                     <button 
                       className="feed-detail-page__view-replies"
@@ -723,18 +783,23 @@ const FeedDetailPage = () => {
                                 {reply.likeCount > 0 && ` ${reply.likeCount}`}
                               </button>
                               {reply.isOwner && (
-                                <button 
-                                  onClick={() => {
-                                    setDeleteTarget({ 
-                                      type: 'reply', 
-                                      id: reply.id,
-                                      parentId: comment.id 
-                                    });
-                                    setShowDeleteModal(true);
-                                  }}
-                                >
-                                  삭제
-                                </button>
+                                <>
+                                  <button onClick={() => handleStartEditComment(reply, true, comment.id)}>
+                                    수정
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      setDeleteTarget({ 
+                                        type: 'reply', 
+                                        id: reply.id,
+                                        parentId: comment.id 
+                                      });
+                                      setShowDeleteModal(true);
+                                    }}
+                                  >
+                                    삭제
+                                  </button>
+                                </>
                               )}
                             </div>
                           </div>
@@ -743,7 +808,7 @@ const FeedDetailPage = () => {
                     </div>
                   )}
 
-                  {/* 답글 더보기 버튼 (이미 로드했고 더 있을 때) */}
+                  {/* 답글 더보기 버튼 */}
                   {comment.repliesLoaded && getRemainingRepliesCount(comment) > 0 && (
                     <button 
                       className="feed-detail-page__view-replies"
@@ -758,7 +823,6 @@ const FeedDetailPage = () => {
                 </div>
               ))}
 
-              {/* 댓글 더보기 버튼 */}
               {hasMoreComments && (
                 <button 
                   className="feed-detail-page__load-more"
@@ -800,6 +864,46 @@ const FeedDetailPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* 댓글 수정 모달 */}
+      <Modal
+        isOpen={showEditCommentModal}
+        onClose={() => {
+          setShowEditCommentModal(false);
+          setEditingComment(null);
+          setEditCommentText('');
+        }}
+        title="댓글 수정"
+      >
+        <div className="feed-detail-page__edit-comment-modal">
+          <textarea
+            className="feed-detail-page__edit-comment-textarea"
+            value={editCommentText}
+            onChange={(e) => setEditCommentText(e.target.value)}
+            placeholder="댓글을 입력하세요..."
+            rows={4}
+          />
+          <div className="feed-detail-page__edit-comment-actions">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowEditCommentModal(false);
+                setEditingComment(null);
+                setEditCommentText('');
+              }}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleSubmitEditComment}
+              loading={isEditingComment}
+              disabled={!editCommentText.trim()}
+            >
+              수정
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* 좋아요 목록 모달 */}
       <Modal
