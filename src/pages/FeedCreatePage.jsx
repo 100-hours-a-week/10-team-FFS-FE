@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import { mockClothes } from '../mocks/data';
 import { fileToDataUrl, isValidUploadImage } from '../utils/helpers';
 import { IoAdd, IoClose, IoCheckmark } from 'react-icons/io5';
+import { createFeed, getPresignedUrls, uploadToS3 } from '../api';
 import './FeedCreatePage.css';
 
 const FeedCreatePage = () => {
@@ -24,20 +25,37 @@ const FeedCreatePage = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showClothesModal, setShowClothesModal] = useState(false);
 
-  // AI 코디에서 온 이미지 처리
+  // AI 코디에서 온 이미지 처리 (URL → File 변환)
   useEffect(() => {
-    if (presetImage) {
-      // 이미지 URL을 첫 번째 이미지로 설정
-      setImages([{ preview: presetImage, isPreset: true }]);
-    }
-  }, [presetImage]);
+    const loadPresetImage = async () => {
+      if (presetImage) {
+        try {
+          // URL에서 이미지를 fetch하여 File 객체로 변환
+          const response = await fetch(presetImage);
+          const blob = await response.blob();
+          const file = new File([blob], 'ai-coordination.png', { type: blob.type || 'image/png' });
+          
+          setImages([{ 
+            file,
+            preview: presetImage, 
+            isPreset: true 
+          }]);
+        } catch (err) {
+          console.error('Failed to load preset image:', err);
+          showError('AI 코디 이미지를 불러오는데 실패했습니다.');
+        }
+      }
+    };
+    
+    loadPresetImage();
+  }, [presetImage, showError]);
 
   // 이미지 선택
   const handleImageSelect = async (e) => {
     const files = Array.from(e.target.files || []);
     
-    if (images.length + files.length > 10) {
-      showError('최대 10장까지 업로드 가능합니다.');
+    if (images.length + files.length > 5) {
+      showError('최대 5장까지 업로드 가능합니다.');
       return;
     }
 
@@ -97,18 +115,85 @@ const FeedCreatePage = () => {
 
     setIsSubmitting(true);
     try {
-      // API 연동 필요: 피드 생성 API 호출
-      // await createFeed({
-      //   images: images.map(img => img.file),
-      //   content,
-      //   clothesIds: selectedClothes.map(c => c.id),
-      // });
+      // 1. Presigned URL 발급
+      const files = images.map(img => ({
+        name: img.file.name,
+        type: img.file.type,
+      }));
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const presignedResponse = await getPresignedUrls('FEED', files);
+      console.log(presignedResponse)
+      const urls = presignedResponse.data;
+
+      // 2. S3에 이미지 업로드
+      const uploadPromises = urls.map((urlInfo, index) => 
+        uploadToS3(urlInfo.presignedUrl, images[index].file)
+      );
+      await Promise.all(uploadPromises);
+
+      // 3. 피드 생성 API 호출
+      const fileIds = urls.map(urlInfo => urlInfo.fileId);
+      
+      const feedData = {
+        fileIds,
+      };
+
+      if (selectedClothes.length > 0) {
+        feedData.clothesIds = selectedClothes.map(c => c.id);
+      }
+
+      if (content.trim()) {
+        feedData.content = content.trim();
+      }
+
+      await createFeed(feedData);
+      
       success('피드가 작성되었습니다.');
       navigate('/feed');
     } catch (err) {
-      showError('피드 작성에 실패했습니다.');
+      console.error('Feed creation failed:', err);
+      
+      // 에러 메시지 처리
+      const errorMessage = err.message || 'internal_server_error';
+      
+      switch (errorMessage) {
+        case 'maximum_5_files_allowed':
+          showError('최대 5장까지 업로드 가능합니다.');
+          break;
+        case 'minimum_1_file_allowed':
+          showError('최소 1장의 이미지가 필요합니다.');
+          break;
+        case 'file_not_found':
+          showError('파일을 찾을 수 없습니다. 다시 시도해주세요.');
+          break;
+        case 'file_access_denied':
+          showError('파일 접근 권한이 없습니다.');
+          break;
+        case 'not_pending_state':
+        case 'uploaded_file_mismatch':
+          showError('파일 업로드 상태가 올바르지 않습니다. 다시 시도해주세요.');
+          break;
+        case 'clothes_not_found':
+          showError('선택한 옷을 찾을 수 없습니다.');
+          break;
+        case 'clothes_access_denied':
+          showError('선택한 옷에 접근할 수 없습니다.');
+          break;
+        case 'content_too_long':
+          showError('내용이 너무 깁니다.');
+          break;
+        case 'too_many_files':
+          showError('파일 개수가 너무 많습니다.');
+          break;
+        case 'unsupported_file_type':
+          showError('지원하지 않는 파일 형식입니다. PNG, JPEG만 가능합니다.');
+          break;
+        case 'rate_limit_exceeded':
+          showError('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+          break;
+        default:
+          showError('피드 작성에 실패했습니다.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -145,7 +230,7 @@ const FeedCreatePage = () => {
         {/* 이미지 업로드 */}
         <div className="feed-create-page__section">
           <label className="feed-create-page__label">
-            사진 ({images.length}/10)
+            사진 ({images.length}/5)
           </label>
           <div className="feed-create-page__images">
             <input
@@ -157,7 +242,7 @@ const FeedCreatePage = () => {
               style={{ display: 'none' }}
             />
             
-            {images.length < 10 && (
+            {images.length < 5 && (
               <button 
                 className="feed-create-page__image-add"
                 onClick={() => fileInputRef.current?.click()}
