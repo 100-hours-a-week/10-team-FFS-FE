@@ -11,7 +11,7 @@ on:
     branches: [dev]
 
 env:
-  BUILD_DIR: /var/www/html/frontend
+  BUILD_DIR: /var/www/frontend
 
 jobs:
   # ==================== CI Job ====================
