@@ -11,18 +11,18 @@ const useInfiniteScroll = (fetchData, options = {}) => {
   const cursorRef = useRef(null);
   const observerRef = useRef(null);
 
-  // ✅ 중복 호출 방지용 refs
+  // 중복 호출 방지용 refs
   const inFlightRef = useRef(false);
   const requestedCursorsRef = useRef(new Set());
   const initialLoadedRef = useRef(false);
 
   const loadMore = useCallback(async () => {
-    // ✅ state 말고 ref로 가드 (동시 호출 레이스 방지)
+    // state 말고 ref로 가드 (동시 호출 레이스 방지)
     if (inFlightRef.current || !hasMore) return;
 
     const cursor = cursorRef.current;
 
-    // ✅ 같은 cursor로 재호출 방지 (특히 초기 null 페이지 중복 방지)
+    // 같은 cursor로 재호출 방지 (특히 초기 null 페이지 중복 방지)
     const cursorKey = cursor ?? '__NULL__';
     if (requestedCursorsRef.current.has(cursorKey)) return;
 
@@ -59,7 +59,7 @@ const useInfiniteScroll = (fetchData, options = {}) => {
     }
   }, [fetchData, hasMore]);
 
-  // ✅ 초기 로드: StrictMode 2회 실행 방지
+  // 초기 로드: StrictMode 2회 실행 방지
   useEffect(() => {
     if (!initialLoad) return;
     if (initialLoadedRef.current) return;
@@ -67,7 +67,7 @@ const useInfiniteScroll = (fetchData, options = {}) => {
     loadMore();
   }, [initialLoad, loadMore]);
 
-  // ✅ IO 지원하면 scroll 폴백 끄기
+  // IO 지원하면 scroll 폴백 끄기
   useEffect(() => {
     if ('IntersectionObserver' in window) return;
 
@@ -93,7 +93,7 @@ const useInfiniteScroll = (fetchData, options = {}) => {
     setHasMore(true);
     setError(null);
 
-    // ✅ 상태도 리셋
+    // 상태도 리셋
     requestedCursorsRef.current.clear();
     initialLoadedRef.current = false;
   }, []);
