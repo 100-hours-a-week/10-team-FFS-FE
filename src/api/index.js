@@ -98,30 +98,64 @@ const refreshAccessToken = async () => {
    인증 관련 API
    ============================================== */
 
-export const kakaoLogin = async (authCode) => {
+/**
+ * 카카오 로그인
+ * POST /api/v1/auth/kakao
+ * @param {string} authorizationCode - 카카오 인가 코드
+ * @returns {Promise<{code: number, message: string, data: {isRegistered: boolean, accessToken: string, nickname?: string}}>}
+ */
+export const kakaoLogin = async (authorizationCode) => {
   return apiRequest('/auth/kakao', {
     method: 'POST',
-    body: JSON.stringify({ code: authCode }),
+    body: JSON.stringify({ authorizationCode }),
   });
 };
 
-export const submitAdditionalInfo = async (data) => {
-  const formData = new FormData();
-  if (data.profileImage) {
-    formData.append('profileImage', data.profileImage);
+/**
+ * 회원가입 완료 (추가 정보 입력)
+ * POST /api/v1/users
+ * @param {Object} data
+ * @param {string} data.nickname - 닉네임 (필수)
+ * @param {string} data.birthdate - 생년월일 YYYY-MM-DD (필수)
+ * @param {string} data.gender - 성별 MALE/FEMALE/OTHER (필수)
+ * @param {number} [data.profileFileId] - 프로필 이미지 파일 ID (선택)
+ * @returns {Promise<{code: number, message: string, data: null}>}
+ */
+export const registerUser = async (data) => {
+  const body = {
+    nickname: data.nickname,
+    birthDate: data.birthdate,
+    gender: data.gender,
+  };
+
+  if (data.profileFileId) {
+    body.profileFileId = data.profileFileId;
   }
-  formData.append('nickname', data.nickname);
-  formData.append('birthday', data.birthday);
-  formData.append('gender', data.gender);
-  
-  return apiRequest('/auth/additional-info', {
+
+  return apiRequest('/users', {
     method: 'POST',
-    body: formData,
+    body: JSON.stringify(body),
   });
 };
 
+/**
+ * 닉네임 중복 확인
+ * GET /api/v1/users/validation?nickname={nickname}
+ * @param {string} nickname
+ * @returns {Promise<{code: number, message: string, data: {usable: boolean}}>}
+ */
 export const checkNickname = async (nickname) => {
-  return apiRequest(`/auth/check-nickname?nickname=${encodeURIComponent(nickname)}`);
+  return apiRequest(`/users/validation?nickname=${encodeURIComponent(nickname)}`);
+};
+
+/**
+ * 생년월일 유효성 검사
+ * GET /api/v1/users/validation/birth-date?birthDate={birthDate}
+ * @param {string} birthDate
+ * @returns {Promise<{code: number, message: string, data: {valid: boolean}}>}
+ */
+export const checkBirthDate = async (birthDate) => {
+  return apiRequest(`/users/validation/birth-date?birthDate=${encodeURIComponent(birthDate)}`);
 };
 
 export const logout = async () => {
@@ -195,19 +229,20 @@ export const uploadFiles = async (purpose, files) => {
     name: file.name,
     type: file.type,
   }));
-  
+
   const presignedResponse = await getPresignedUrls(purpose, fileInfos);
-  const { urls } = presignedResponse.data;
-  
+  // API 응답: { code, message, data: [{ fileId, objectKey, presignedUrl }] }
+  const urlInfos = presignedResponse.data;
+
   // 2. 각 파일을 S3에 업로드
-  const uploadPromises = urls.map((urlInfo, index) => 
+  const uploadPromises = urlInfos.map((urlInfo, index) =>
     uploadToS3(urlInfo.presignedUrl, files[index])
   );
-  
+
   await Promise.all(uploadPromises);
-  
+
   // 3. fileId 배열 반환
-  return urls.map(urlInfo => urlInfo.fileId);
+  return urlInfos.map(urlInfo => urlInfo.fileId);
 };
 
 /* ==============================================

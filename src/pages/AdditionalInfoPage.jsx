@@ -1,17 +1,20 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Button, Input } from '../components/common';
 import { validateNickname, fileToDataUrl, isValidUploadImage } from '../utils/helpers';
+import { checkNickname, checkBirthDate, registerUser, uploadFiles } from '../api';
 import { IoAdd, IoClose } from 'react-icons/io5';
 import './AdditionalInfoPage.css';
 
 const AdditionalInfoPage = () => {
   const navigate = useNavigate();
-  const { updateUser } = useAuth();
+  const { logout } = useAuth();
   const { success, error: showError } = useToast();
   const fileInputRef = useRef(null);
+  const nicknameDebounceRef = useRef(null);
+  const birthdayDebounceRef = useRef(null);
 
   const [formData, setFormData] = useState({
     profileImage: null,
@@ -20,14 +23,32 @@ const AdditionalInfoPage = () => {
     birthday: '',
     gender: '',
   });
-  
+
   const [nicknameStatus, setNicknameStatus] = useState({
     checking: false,
     available: null,
     message: '',
   });
-  
+
+  const [birthdayStatus, setBirthdayStatus] = useState({
+    checking: false,
+    valid: null,
+    message: '',
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 컴포넌트 언마운트 시 디바운스 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (nicknameDebounceRef.current) {
+        clearTimeout(nicknameDebounceRef.current);
+      }
+      if (birthdayDebounceRef.current) {
+        clearTimeout(birthdayDebounceRef.current);
+      }
+    };
+  }, []);
 
   // 프로필 이미지 선택
   const handleImageSelect = async (e) => {
@@ -67,7 +88,12 @@ const AdditionalInfoPage = () => {
   const handleNicknameChange = (e) => {
     const value = e.target.value;
     setFormData(prev => ({ ...prev, nickname: value }));
-    
+
+    // 이전 디바운스 타이머 취소
+    if (nicknameDebounceRef.current) {
+      clearTimeout(nicknameDebounceRef.current);
+    }
+
     if (!value) {
       setNicknameStatus({ checking: false, available: null, message: '' });
       return;
@@ -83,17 +109,71 @@ const AdditionalInfoPage = () => {
       return;
     }
 
-    // API 연동 필요: 닉네임 중복 확인
+    // 디바운스 적용하여 API 호출
     setNicknameStatus({ checking: true, available: null, message: '확인 중...' });
-    
-    // 목업: 닉네임 중복 확인 시뮬레이션
-    setTimeout(() => {
-      const isDuplicate = value === 'duplicate'; // 테스트용
-      setNicknameStatus({
-        checking: false,
-        available: !isDuplicate,
-        message: isDuplicate ? '중복된 닉네임 입니다' : '사용 가능한 닉네임입니다',
-      });
+
+    nicknameDebounceRef.current = setTimeout(async () => {
+      try {
+        const response = await checkNickname(value);
+        const { usable } = response.data;
+        setNicknameStatus({
+          checking: false,
+          available: usable,
+          message: usable ? '사용 가능한 닉네임입니다' : '중복된 닉네임 입니다',
+        });
+      } catch (err) {
+        // 400 에러는 유효성 검사 실패 (서버 측)
+        if (err.code === 400) {
+          setNicknameStatus({
+            checking: false,
+            available: false,
+            message: '닉네임은 띄어쓰기 및 특수문자 사용이 불가능하고 16자 미만으로 입력해야 합니다.',
+          });
+        } else {
+          setNicknameStatus({
+            checking: false,
+            available: null,
+            message: '확인 중 오류가 발생했습니다.',
+          });
+        }
+      }
+    }, 500);
+  };
+
+  // 생년월일 유효성 검사
+  const handleBirthdayChange = (e) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, birthday: value }));
+
+    // 이전 디바운스 타이머 취소
+    if (birthdayDebounceRef.current) {
+      clearTimeout(birthdayDebounceRef.current);
+    }
+
+    if (!value) {
+      setBirthdayStatus({ checking: false, valid: null, message: '' });
+      return;
+    }
+
+    // 디바운스 적용하여 API 호출
+    setBirthdayStatus({ checking: true, valid: null, message: '확인 중...' });
+
+    birthdayDebounceRef.current = setTimeout(async () => {
+      try {
+        const response = await checkBirthDate(value);
+        const { valid } = response.data;
+        setBirthdayStatus({
+          checking: false,
+          valid: valid,
+          message: valid ? '유효한 생년월일입니다' : '유효하지 않은 생년월일입니다',
+        });
+      } catch (err) {
+        setBirthdayStatus({
+          checking: false,
+          valid: false,
+          message: err.message || '확인 중 오류가 발생했습니다.',
+        });
+      }
     }, 500);
   };
 
@@ -104,7 +184,7 @@ const AdditionalInfoPage = () => {
       showError('닉네임을 입력해주세요.');
       return;
     }
-    
+
     if (!nicknameStatus.available) {
       showError('사용할 수 없는 닉네임입니다.');
       return;
@@ -112,6 +192,11 @@ const AdditionalInfoPage = () => {
 
     if (!formData.birthday) {
       showError('생일을 입력해주세요.');
+      return;
+    }
+
+    if (!birthdayStatus.valid) {
+      showError('유효하지 않은 생년월일입니다.');
       return;
     }
 
@@ -123,30 +208,43 @@ const AdditionalInfoPage = () => {
     setIsSubmitting(true);
 
     try {
-      // API 연동 필요: 추가정보 저장 API 호출
-      // await submitAdditionalInfo(formData);
-      
-      // 목업: 저장 성공 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      updateUser({
+      let profileFileId = null;
+
+      // 프로필 이미지가 있으면 S3에 업로드
+      if (formData.profileImage) {
+        try {
+          const fileIds = await uploadFiles('PROFILE', [formData.profileImage]);
+          profileFileId = fileIds[0];
+        } catch (uploadErr) {
+          console.error('프로필 이미지 업로드 실패:', uploadErr);
+          showError('프로필 이미지 업로드에 실패했습니다.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // 회원가입 완료 API 호출
+      await registerUser({
         nickname: formData.nickname,
-        birthday: formData.birthday,
+        birthdate: formData.birthday,
         gender: formData.gender,
-        profileImage: formData.profilePreview,
-        isNewUser: false,
+        profileFileId: profileFileId,
       });
 
+      // 임시 토큰 삭제 및 로그아웃 처리
+      logout();
+
       success('회원가입을 완료하였습니다');
-      navigate('/login');
+      navigate('/login', { replace: true });
     } catch (err) {
-      showError('저장에 실패했습니다. 다시 시도해주세요.');
+      console.error('회원가입 실패:', err);
+      showError(err.message || '저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, nicknameStatus.available, navigate, showError, success, updateUser]);
+  }, [formData, nicknameStatus.available, birthdayStatus.valid, navigate, showError, success, logout]);
 
-  const isFormValid = formData.nickname && nicknameStatus.available && formData.birthday && formData.gender;
+  const isFormValid = formData.nickname && nicknameStatus.available && formData.birthday && birthdayStatus.valid && formData.gender;
 
   return (
     <div className="additional-info-page">
@@ -185,7 +283,9 @@ const AdditionalInfoPage = () => {
                 <IoAdd size={32} className="additional-info-page__profile-add" />
               )}
             </div>
-            <p className="additional-info-page__profile-hint">프로필 사진을 업로드 하세요</p>
+            {!formData.profilePreview && (
+              <p className="additional-info-page__profile-hint">프로필 사진을 업로드 할 수 있습니다.</p>
+            )}
           </div>
         </div>
 
@@ -211,7 +311,11 @@ const AdditionalInfoPage = () => {
             type="date"
             placeholder="생일을 입력하세요"
             value={formData.birthday}
-            onChange={(e) => setFormData(prev => ({ ...prev, birthday: e.target.value }))}
+            onChange={handleBirthdayChange}
+            min="1900-01-01"
+            max={new Date().toISOString().split('T')[0]}
+            error={birthdayStatus.valid === false ? birthdayStatus.message : null}
+            helperText={birthdayStatus.valid === true ? birthdayStatus.message : (birthdayStatus.checking ? '확인 중...' : null)}
           />
         </div>
 
@@ -227,9 +331,8 @@ const AdditionalInfoPage = () => {
             onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
           >
             <option value="">성별을 선택하세요</option>
-            <option value="남성">남성</option>
-            <option value="여성">여성</option>
-            <option value="기타">기타</option>
+            <option value="MALE">남성</option>
+            <option value="FEMALE">여성</option>
           </select>
         </div>
 

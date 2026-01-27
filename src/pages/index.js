@@ -1,4 +1,5 @@
 export { default as LoginPage } from './LoginPage';
+export { default as KakaoCallbackPage } from './KakaoCallbackPage';
 export { default as AdditionalInfoPage } from './AdditionalInfoPage';
 export { default as ClosetListPage } from './ClosetListPage';
 export { default as ClosetDetailPage } from './ClosetDetailPage';

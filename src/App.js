@@ -5,6 +5,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { AppLayout } from './components/layout';
 import {
   LoginPage,
+  KakaoCallbackPage,
   AdditionalInfoPage,
   ClosetListPage,
   ClosetDetailPage,
@@ -72,6 +73,8 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+      {/* 카카오 OAuth 콜백 */}
+      <Route path="/oauth/kakao/callback" element={<KakaoCallbackPage />} />
 
       {/* 보호된 라우트 - 레이아웃 포함 */}
       <Route
