@@ -258,6 +258,15 @@ export const uploadFiles = async (purpose, files) => {
    ============================================== */
 
 /**
+ * 내 옷장 옷 개수 조회
+ * GET /api/v1/users/me/clothes/count
+ * @returns {Promise<{code: number, message: string, data: {count: number}}>}
+ */
+export const getMyClothesCount = async () => {
+  return apiRequest('/users/me/clothes/count');
+};
+
+/**
  * 내 옷장 목록 조회
  * GET /api/v1/users/{userId}/clothes
  * @param {number} userId - 사용자 ID
