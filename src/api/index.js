@@ -75,10 +75,13 @@ const handleResponse = async (response) => {
   return data;
 };
 
-// 리프레시 토큰으로 액세스 토큰 갱신
+/**
+ * 리프레시 토큰으로 액세스 토큰 갱신
+ * POST /api/v1/auth/tokens
+ */
 const refreshAccessToken = async () => {
   try {
-    const response = await fetch(`${BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${BASE_URL}/auth/tokens`, {
       method: 'POST',
       credentials: 'include',
     });
