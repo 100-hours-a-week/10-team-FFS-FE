@@ -15,15 +15,15 @@ const removeAccessToken = () => localStorage.removeItem('accessToken');
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
   const accessToken = getAccessToken();
-  
+
   const defaultHeaders = {
     'Content-Type': 'application/json',
   };
-  
+
   if (accessToken) {
     defaultHeaders['Authorization'] = `Bearer ${accessToken}`;
   }
-  
+
   const config = {
     ...options,
     credentials: 'include', // refresh_token 쿠키 포함
@@ -32,15 +32,15 @@ const apiRequest = async (endpoint, options = {}) => {
       ...options.headers,
     },
   };
-  
+
   // FormData인 경우 Content-Type 헤더 제거 (브라우저가 자동 설정)
   if (options.body instanceof FormData) {
     delete config.headers['Content-Type'];
   }
-  
+
   try {
     const response = await fetch(url, config);
-    
+
     // 토큰 만료 시 리프레시 토큰으로 갱신 로직
     if (response.status === 401) {
       const refreshed = await refreshAccessToken();
@@ -54,7 +54,7 @@ const apiRequest = async (endpoint, options = {}) => {
         throw new Error('Authentication failed');
       }
     }
-    
+
     return handleResponse(response);
   } catch (error) {
     console.error('API Request Error:', error);
@@ -64,25 +64,28 @@ const apiRequest = async (endpoint, options = {}) => {
 
 const handleResponse = async (response) => {
   const data = await response.json().catch(() => ({ message: 'An error occurred' }));
-  
+
   if (!response.ok) {
     const error = new Error(data.message || `HTTP error! status: ${response.status}`);
     error.code = data.code;
     error.data = data.data;
     throw error;
   }
-  
+
   return data;
 };
 
-// 리프레시 토큰으로 액세스 토큰 갱신
+/**
+ * 리프레시 토큰으로 액세스 토큰 갱신
+ * POST /api/v1/auth/tokens
+ */
 const refreshAccessToken = async () => {
   try {
-    const response = await fetch(`${BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${BASE_URL}/auth/tokens`, {
       method: 'POST',
       credentials: 'include',
     });
-    
+
     if (response.ok) {
       const data = await response.json();
       setAccessToken(data.data.accessToken);
@@ -141,12 +144,12 @@ export const registerUser = async (data) => {
 
 /**
  * 닉네임 중복 확인
- * GET /api/v1/users/validation?nickname={nickname}
+ * GET /api/v1/users/validation/nickname?nickname={nickname}
  * @param {string} nickname
  * @returns {Promise<{code: number, message: string, data: {usable: boolean}}>}
  */
 export const checkNickname = async (nickname) => {
-  return apiRequest(`/users/validation?nickname=${encodeURIComponent(nickname)}`);
+  return apiRequest(`/users/validation/nickname?nickname=${encodeURIComponent(nickname)}`);
 };
 
 /**
@@ -159,9 +162,13 @@ export const checkBirthDate = async (birthDate) => {
   return apiRequest(`/users/validation/birth-date?birthDate=${encodeURIComponent(birthDate)}`);
 };
 
+/**
+ * 로그아웃
+ * DELETE /api/v1/auth/tokens
+ */
 export const logout = async () => {
-  const result = await apiRequest('/auth/logout', {
-    method: 'POST',
+  const result = await apiRequest('/auth/tokens', {
+    method: 'DELETE',
   });
   removeAccessToken();
   return result;
@@ -210,11 +217,11 @@ export const uploadToS3 = async (presignedUrl, file) => {
     },
     body: file,
   });
-  
+
   if (!response.ok) {
     throw new Error(`S3 upload failed: ${response.status}`);
   }
-  
+
   return response;
 };
 
@@ -237,7 +244,7 @@ export const uploadFiles = async (purpose, files) => {
 
   // 2. 각 파일을 S3에 업로드
   const uploadPromises = urlInfos.map((urlInfo, index) =>
-    uploadToS3(urlInfo.presignedUrl, files[index])
+      uploadToS3(urlInfo.presignedUrl, files[index])
   );
 
   await Promise.all(uploadPromises);
@@ -277,11 +284,11 @@ export const getMyClothes = async (userId, category = null, after = null, limit 
 
 export const uploadClothes = async (clothesData) => {
   const formData = new FormData();
-  
+
   clothesData.images.forEach((image) => {
     formData.append('images', image);
   });
-  
+
   formData.append('productName', clothesData.productName);
   formData.append('brand', clothesData.brand || '');
   formData.append('price', clothesData.price || '');
@@ -292,7 +299,7 @@ export const uploadClothes = async (clothesData) => {
   formData.append('materials', JSON.stringify(clothesData.materials || []));
   formData.append('colors', JSON.stringify(clothesData.colors || []));
   formData.append('styleTags', JSON.stringify(clothesData.styleTags || []));
-  
+
   return apiRequest('/closet', {
     method: 'POST',
     body: formData,
@@ -319,7 +326,7 @@ export const deleteClothes = async (clothesId) => {
 export const analyzeClothesImage = async (imageFile) => {
   const formData = new FormData();
   formData.append('image', imageFile);
-  
+
   return apiRequest('/ai/analyze-clothes', {
     method: 'POST',
     body: formData,
@@ -421,15 +428,15 @@ export const createFeed = async (feedData) => {
   const body = {
     fileIds: feedData.fileIds,
   };
-  
+
   if (feedData.clothesIds && feedData.clothesIds.length > 0) {
     body.clothesIds = feedData.clothesIds;
   }
-  
+
   if (feedData.content) {
     body.content = feedData.content;
   }
-  
+
   return apiRequest('/feeds', {
     method: 'POST',
     body: JSON.stringify(body),
@@ -446,7 +453,7 @@ export const createFeed = async (feedData) => {
 export const createFeedWithImages = async (feedData) => {
   // 1. 이미지 파일들을 S3에 업로드하고 fileId 배열 받기
   const fileIds = await uploadFiles('FEED', feedData.images);
-  
+
   // 2. 피드 생성
   return createFeed({
     fileIds,
@@ -465,15 +472,15 @@ export const createFeedWithImages = async (feedData) => {
  */
 export const updateFeed = async (feedId, feedData) => {
   const body = {};
-  
+
   if (feedData.content !== undefined) {
     body.content = feedData.content;
   }
-  
+
   if (feedData.clothesIds !== undefined) {
     body.clothesIds = feedData.clothesIds;
   }
-  
+
   return apiRequest(`/feeds/${feedId}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
@@ -572,11 +579,11 @@ export const getReplies = async (feedId, commentId, after = null, limit = 20) =>
  */
 export const createComment = async (feedId, content, parentId = null) => {
   const body = { content };
-  
+
   if (parentId) {
     body.parentId = parentId;
   }
-  
+
   return apiRequest(`/feeds/${feedId}/comments`, {
     method: 'POST',
     body: JSON.stringify(body),
@@ -657,7 +664,7 @@ export const updateMyProfile = async (profileData) => {
   if (profileData.nickname) {
     formData.append('nickname', profileData.nickname);
   }
-  
+
   return apiRequest('/users/me/profile', {
     method: 'PUT',
     body: formData,
