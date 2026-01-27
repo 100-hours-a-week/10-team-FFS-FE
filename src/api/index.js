@@ -162,9 +162,13 @@ export const checkBirthDate = async (birthDate) => {
   return apiRequest(`/users/validation/birth-date?birthDate=${encodeURIComponent(birthDate)}`);
 };
 
+/**
+ * 로그아웃
+ * DELETE /api/v1/auth/tokens
+ */
 export const logout = async () => {
-  const result = await apiRequest('/auth/logout', {
-    method: 'POST',
+  const result = await apiRequest('/auth/tokens', {
+    method: 'DELETE',
   });
   removeAccessToken();
   return result;
