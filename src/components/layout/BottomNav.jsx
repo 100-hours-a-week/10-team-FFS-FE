@@ -8,6 +8,7 @@ import './BottomNav.css';
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const getUserId = () => localStorage.getItem('userId');
 
   const navItems = [
     {
@@ -38,7 +39,7 @@ const BottomNav = () => {
       id: 'mypage',
       icon: IoPersonOutline,
       label: '마이페이지',
-      path: '/mypage',
+      path: `/profile/${getUserId()}`,
     },
   ];
 

@@ -99,6 +99,7 @@ function AppRoutes() {
         <Route path="/feed" element={<FeedListPage />} />
         <Route path="/feed/create" element={<FeedCreatePage />} />
         <Route path="/feed/:feedId" element={<FeedDetailPage />} />
+        <Route path="/feed/:feedId/edit" element={<FeedCreatePage />} />
 
         {/* 타인 프로필 */}
         <Route path="/profile/:userId" element={<ProfilePage />} />

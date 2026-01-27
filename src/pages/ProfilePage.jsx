@@ -1,150 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Spinner } from '../components/common';
+import { FeedCardSkeleton, Spinner } from '../components/common';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { mockUsers, mockFeeds } from '../mocks/data';
+import { getUserProfile, getUserFeeds } from '../api';
 import { formatNumber } from '../utils/helpers';
-import { IoHeart, IoChatbubbleOutline } from 'react-icons/io5';
-import './ProfilePage.css';
+import { IoHeart, IoChatbubbleOutline, IoSettingsOutline } from 'react-icons/io5';
+import './MyPage.css';
 
 const ProfilePage = () => {
-  const { userId } = useParams();
   const navigate = useNavigate();
+  const { userId } = useParams(); // URL에서 userId 가져오기
+  const { user: currentUser } = useAuth();
   const { error: showError } = useToast();
 
-  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [feeds, setFeeds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFeedsLoading, setIsFeedsLoading] = useState(false);
+  const [feedsCursor, setFeedsCursor] = useState(null);
+  const [hasMoreFeeds, setHasMoreFeeds] = useState(false);
 
-  // 데이터 로드
+  // 프로필 & 피드 로드
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadProfileData = async () => {
       setIsLoading(true);
       try {
-        // API 연동 필요: 사용자 프로필 조회
-        // const profileData = await getUserProfile(userId);
-        // const feedsData = await getUserFeeds(userId);
+        // 프로필 조회
+        const profileResponse = await getUserProfile(userId);
+        const profileData = profileResponse.data;
         
-        // 목업 데이터 사용
-        const userData = mockUsers.find(u => u.id === userId);
-        const userFeeds = mockFeeds.filter(f => f.author.id === userId);
-        
-        if (userData) {
-          setUser(userData);
-          setFeeds(userFeeds);
-        }
+        setProfile({
+          id: profileData.userProfile.userId,
+          profileImage: profileData.userProfile.userProfileImageUrl,
+          nickname: profileData.userProfile.nickname,
+          isMe: profileData.isMe,
+          followerCount: profileData.followerCount || 0,
+          followingCount: profileData.followingCount || 0,
+        });
+
+        // 피드 목록 조회
+        await loadFeeds();
       } catch (err) {
-        showError('프로필을 불러오는데 실패했습니다.');
+        console.error('Failed to load profile:', err);
+        if (err.message === 'target_user_not_found' || err.message === 'user_not_found') {
+          showError('사용자를 찾을 수 없습니다.');
+          navigate(-1);
+        } else {
+          showError('프로필을 불러오는데 실패했습니다.');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadProfile();
-  }, [userId, showError]);
+    if (userId) {
+      loadProfileData();
+    }
+  }, [userId, navigate, showError]);
+
+  // 피드 목록 로드
+  const loadFeeds = useCallback(async (cursor = null) => {
+    try {
+      const response = await getUserFeeds(userId, cursor, 20);
+      const { items, pageInfo } = response.data;
+
+      const mappedFeeds = items.map(item => ({
+        id: item.feedId,
+        primaryImageUrl: item.primaryImageUrl,
+        likeCount: item.likeCount,
+        commentCount: item.commentCount,
+        isLiked: item.isLiked,
+      }));
+
+      if (cursor) {
+        setFeeds(prev => [...prev, ...mappedFeeds]);
+      } else {
+        setFeeds(mappedFeeds);
+      }
+
+      setFeedsCursor(pageInfo.nextCursor);
+      setHasMoreFeeds(pageInfo.hasNextPage);
+    } catch (err) {
+      console.error('Failed to load feeds:', err);
+    }
+  }, [userId]);
+
+  // 더 많은 피드 로드
+  const handleLoadMoreFeeds = async () => {
+    if (isFeedsLoading || !hasMoreFeeds) return;
+    setIsFeedsLoading(true);
+    await loadFeeds(feedsCursor);
+    setIsFeedsLoading(false);
+  };
 
   // 피드 상세로 이동
   const handleFeedClick = (feedId) => {
     navigate(`/feed/${feedId}`);
   };
 
-  // 옷장 보기
+  // 설정 페이지로 이동
+  const handleSettingsClick = () => {
+    navigate('/mypage/edit');
+  };
+
+  // 내 옷장으로 이동
+  const handleMyClosetClick = () => {
+    navigate('/closet');
+  };
+  // 남의 옷장으로 이동
   const handleClosetClick = () => {
-    navigate(`/profile/${userId}/closet`);
+    navigate(`/closet/${userId}`);
   };
 
   if (isLoading) {
     return (
-      <div className="profile-page">
+      <div className="my-page">
         <Header showBack title="프로필" />
-        <div className="profile-page__loading">
+        <div className="my-page__loading">
           <Spinner size="large" />
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return (
-      <div className="profile-page">
-        <Header showBack title="프로필" />
-        <div className="profile-page__empty">
-          <p>사용자를 찾을 수 없습니다</p>
-        </div>
-      </div>
-    );
-  }
+  if (!profile) return null;
 
   return (
-    <div className="profile-page">
-      <Header showBack title={user.nickname} />
+    <div className="my-page">
+      <Header 
+        showBack={!profile.isMe}
+        title={profile.isMe ? '마이페이지' : '프로필'}
+        rightAction={profile.isMe ? handleSettingsClick : undefined}
+        rightIcon={profile.isMe ? <IoSettingsOutline size={24} /> : undefined}
+      />
 
-      <div className="profile-page__content">
+      <div className="my-page__content">
         {/* 프로필 정보 */}
-        <div className="profile-page__header">
-          <div className="profile-page__avatar">
-            {user.profileImage ? (
-              <img src={user.profileImage} alt={user.nickname} />
+        <div className="my-page__profile">
+          <div className="my-page__avatar">
+            {profile.profileImage ? (
+              <img src={profile.profileImage} alt={profile.nickname} />
             ) : (
-              <div className="profile-page__avatar-placeholder" />
+              <div className="my-page__avatar-placeholder" />
             )}
           </div>
           
-          <div className="profile-page__info">
-            <h2 className="profile-page__nickname">{user.nickname}</h2>
-            <div className="profile-page__stats">
+          <div className="my-page__info">
+            <h2 className="my-page__nickname">{profile.nickname}</h2>
+            <div className="my-page__stats">
               <span>피드 {feeds.length}</span>
+              {/* <span>팔로워 {formatNumber(profile.followerCount)}</span>
+              <span>팔로잉 {formatNumber(profile.followingCount)}</span> */ }
             </div>
           </div>
         </div>
 
-        {/* 옷장 버튼 */}
-        <button className="profile-page__closet-btn" onClick={handleClosetClick}>
-          {user.nickname} 님의 옷장 보기
-        </button>
+        {/* 버튼 영역 - 내 프로필일 때만 표시 */}
+        {profile.isMe ? (
+          <div className="my-page__buttons">
+            <button className="my-page__btn" onClick={() => navigate('/mypage/edit')}>
+              프로필 편집
+            </button>
+            <button className="my-page__btn" onClick={handleMyClosetClick}>
+              내 옷장 보러가기
+            </button>
+          </div>
+        ):(
+          <div className="my-page__buttons">
+            <button className="my-page__btn" onClick={handleClosetClick}>
+              옷장 구경하러 가기
+            </button>
+          </div>
+
+        )}
 
         {/* 피드 그리드 */}
-        <div className="profile-page__feeds">
-          <h3 className="profile-page__feeds-title">피드</h3>
+        <div className="my-page__feeds">
+          
           
           {feeds.length === 0 ? (
-            <div className="profile-page__feeds-empty">
-              <p>아직 작성한 피드가 없습니다</p>
+            <div className="my-page__feeds-empty">
+              <p>
+                {profile.isMe 
+                  ? '아직 작성한 피드가 없습니다' 
+                  : '아직 작성한 피드가 없습니다'
+                }
+              </p>
+              {profile.isMe && (
+                <button onClick={() => navigate('/feed/create')}>
+                  첫 피드 작성하기
+                </button>
+              )}
             </div>
           ) : (
-            <div className="profile-page__feeds-grid">
-              {feeds.map((feed) => (
-                <div
-                  key={feed.id}
-                  className="profile-page__feed-card"
-                  onClick={() => handleFeedClick(feed.id)}
-                >
-                  <div className="profile-page__feed-image">
-                    {feed.images[0] ? (
-                      <img src={feed.images[0]} alt="피드 이미지" />
-                    ) : (
-                      <div className="profile-page__feed-placeholder">사진</div>
-                    )}
-                    {feed.images.length > 1 && (
-                      <span className="profile-page__feed-count">
-                        +{feed.images.length - 1}
+            <>
+              <h3 className="my-page__feeds-title">
+                {profile.isMe ? '내 피드' : '피드'}
+              </h3>
+              <div className="my-page__feeds-grid">
+                {feeds.map((feed) => (
+                  <div
+                    key={feed.id}
+                    className="my-page__feed-card"
+                    onClick={() => handleFeedClick(feed.id)}
+                  >
+                    <div className="my-page__feed-image">
+                      {feed.primaryImageUrl ? (
+                        <img src={feed.primaryImageUrl} alt="피드 이미지" />
+                      ) : (
+                        <div className="my-page__feed-placeholder">사진</div>
+                      )}
+                    </div>
+                    <div className="my-page__feed-stats">
+                      <span>
+                        <IoHeart size={12} />
+                        {formatNumber(feed.likeCount)}
                       </span>
-                    )}
+                      <span>
+                        <IoChatbubbleOutline size={12} />
+                        {formatNumber(feed.commentCount)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="profile-page__feed-stats">
-                    <span>
-                      <IoHeart size={12} />
-                      {formatNumber(feed.likeCount)}
-                    </span>
-                    <span>
-                      <IoChatbubbleOutline size={12} />
-                      {formatNumber(feed.commentCount)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {/* 피드 더보기 버튼 */}
+              {hasMoreFeeds && (
+                <button 
+                  className="my-page__load-more"
+                  onClick={handleLoadMoreFeeds}
+                  disabled={isFeedsLoading}
+                >
+                  {isFeedsLoading ? '로딩 중...' : '더보기'}
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -10,6 +10,7 @@ const getAccessToken = () => localStorage.getItem('accessToken');
 const setAccessToken = (token) => localStorage.setItem('accessToken', token);
 const removeAccessToken = () => localStorage.removeItem('accessToken');
 
+
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
@@ -620,15 +621,15 @@ export const unlikeComment = async (feedId, commentId) => {
    ============================================== */
 
 export const getUserProfile = async (userId) => {
-  return apiRequest(`/users/${userId}/profile`);
+  return apiRequest(`/users/${userId}`);
 };
 
 export const getUserFeeds = async (userId, cursor = null, limit = 12) => {
-  let url = `/users/${userId}/feeds?limit=${limit}`;
-  if (cursor) {
-    url += `&cursor=${cursor}`;
-  }
-  return apiRequest(url);
+  const params = new URLSearchParams();
+  params.append('limit', limit);
+  if (cursor) params.append('after', cursor);
+
+  return apiRequest(`/users/${userId}/feeds?${params}`);
 };
 
 export const updateMyProfile = async (profileData) => {
