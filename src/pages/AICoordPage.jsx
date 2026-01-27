@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Spinner, Button } from '../components/common';
 import { useToast } from '../contexts/ToastContext';
-import { createOutfitRecommendation, getOutfitHistories, updateOutfitReaction, getMyClothes } from '../api';
+import { createOutfitRecommendation, getOutfitHistories, updateOutfitReaction, getMyClothesCount } from '../api';
 import { downloadImage } from '../utils/helpers';
 import {
   IoArrowDown,
@@ -48,9 +48,9 @@ const AICoordPage = () => {
   useEffect(() => {
     const checkClothes = async () => {
       try {
-        const response = await getMyClothes('ALL', null, 1);
-        const clothes = response.data?.clothes || response.data || [];
-        setHasClothes(clothes.length > 0);
+        const response = await getMyClothesCount();
+        const count = response.data?.count ?? 0;
+        setHasClothes(count > 0);
       } catch (err) {
         // 에러 시 옷이 있다고 가정 (API 실패 시 메인 기능은 동작하도록)
         setHasClothes(true);
