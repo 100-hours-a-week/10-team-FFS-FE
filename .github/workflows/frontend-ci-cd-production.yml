@@ -42,7 +42,7 @@ jobs:
 
       - name: Build project
         id: build
-        run: CI=false npm run build
+        run: npm run build
 
       - name: Run tests
         id: tests

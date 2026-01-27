@@ -38,7 +38,7 @@ jobs:
       #   run: npm run lint
 
       - name: Build project
-        id: CI=false npm run build
+        id: npm run build
         run: npm run build
 
       - name: Run tests
