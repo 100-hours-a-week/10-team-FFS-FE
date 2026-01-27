@@ -250,12 +250,29 @@ export const uploadFiles = async (purpose, files) => {
    옷장 관련 API
    ============================================== */
 
-export const getMyClothes = async (category = 'ALL', cursor = null, limit = 12) => {
-  let url = `/closet?category=${category}&limit=${limit}`;
-  if (cursor) {
-    url += `&cursor=${cursor}`;
+/**
+ * 내 옷장 목록 조회
+ * GET /api/v1/users/{userId}/clothes
+ * @param {number} userId - 사용자 ID
+ * @param {string|null} category - 카테고리 필터 (TOP, BOTTOM, DRESS, SHOES, ACCESSORY, ETC). null이면 전체 조회
+ * @param {number|null} after - 커서 (이전 페이지 마지막 옷 ID)
+ * @param {number} limit - 조회 개수 (기본값 36)
+ * @returns {Promise<{code: number, message: string, data: {items: Array<{clothesId: number, imageUrl: string}>, pageInfo: {hasNextPage: boolean, nextCursor: number|null}}}>}
+ */
+export const getMyClothes = async (userId, category = null, after = null, limit = 36) => {
+  const params = new URLSearchParams();
+  params.append('limit', limit);
+
+  // category가 있고 'ALL'이 아닌 경우에만 파라미터 추가
+  if (category && category !== 'ALL') {
+    params.append('category', category);
   }
-  return apiRequest(url);
+
+  if (after) {
+    params.append('after', after);
+  }
+
+  return apiRequest(`/users/${userId}/clothes?${params}`);
 };
 
 export const uploadClothes = async (clothesData) => {
