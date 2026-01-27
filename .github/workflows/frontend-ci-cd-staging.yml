@@ -135,7 +135,7 @@ jobs:
             sleep 2
 
             echo "🩺 Health check"
-            curl -f http://localhost/staging || exit 1
+            curl -f http://localhost/ || exit 1
 
       - name: Notify Discord - CD Success
         if: success()
