@@ -328,32 +328,39 @@ export const getOtherUserClothesDetail = async (userId, clothesId) => {
    AI 코디 추천 관련 API
    ============================================== */
 
-export const getAICoordination = async (tpo) => {
-  return apiRequest('/ai/coordination', {
+/**
+ * TPO 코디 생성 요청
+ * POST /api/v1/outfits
+ * @param {string} content - 코디 요청 텍스트 (2~100자)
+ * @returns {Promise<{code: number, message: string, data: {outfitSummary: string, outfits: Array<{outfitId: number, outfitImageUrl: string, aiComment: string}>}}>}
+ */
+export const createOutfitRecommendation = async (content) => {
+  return apiRequest('/outfits', {
     method: 'POST',
-    body: JSON.stringify({ tpo }),
+    body: JSON.stringify({ content }),
   });
 };
 
-export const getSearchHistory = async () => {
-  return apiRequest('/ai/coordination/history');
+/**
+ * 최근 TPO 요청 기록 조회
+ * GET /api/v1/outfits/histories
+ * @returns {Promise<{code: number, message: string, data: {requestHistories: Array<{requestId: number, content: string}>}}>}
+ */
+export const getOutfitHistories = async () => {
+  return apiRequest('/outfits/histories');
 };
 
-export const likeCoordination = async (coordinationId) => {
-  return apiRequest(`/ai/coordination/${coordinationId}/like`, {
-    method: 'POST',
-  });
-};
-
-export const unlikeCoordination = async (coordinationId) => {
-  return apiRequest(`/ai/coordination/${coordinationId}/like`, {
-    method: 'DELETE',
-  });
-};
-
-export const saveCoordinationImage = async (coordinationId) => {
-  return apiRequest(`/ai/coordination/${coordinationId}/save`, {
-    method: 'POST',
+/**
+ * TPO 결과 반응 등록
+ * PATCH /api/v1/outfits/feedbacks/{resultId}
+ * @param {number} resultId - TPO 결과 ID
+ * @param {string} reaction - 사용자 반응 ('GOOD' | 'BAD' | 'NONE')
+ * @returns {Promise<{code: number, message: string, data: null}>}
+ */
+export const updateOutfitReaction = async (resultId, reaction) => {
+  return apiRequest(`/outfits/feedbacks/${resultId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ reaction }),
   });
 };
 
