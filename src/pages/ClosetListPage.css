@@ -79,6 +79,11 @@
   background-color: var(--color-primary);
   border-color: var(--color-primary);
 }
+.closet-list-page__category--active:hover {
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
 
 /* 콘텐츠 영역 */
 .closet-list-page__content {

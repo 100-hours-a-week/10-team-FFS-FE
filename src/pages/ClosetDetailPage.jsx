@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { AlertModal, ActionSheet, Spinner } from '../components/common';
-import { mockClothes } from '../mocks/data';
+import { getClothesDetail, deleteClothes } from '../api';
 import { useToast } from '../contexts/ToastContext';
-import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import './ClosetDetailPage.css';
+
+// 카테고리 라벨 매핑
+const CATEGORY_LABELS = {
+  TOP: '상의',
+  BOTTOM: '하의',
+  DRESS: '원피스',
+  SHOES: '신발',
+  ACCESSORY: '악세사리',
+  ETC: '기타',
+};
 
 const ClosetDetailPage = () => {
   const { clothesId } = useParams();
@@ -15,27 +24,26 @@ const ClosetDetailPage = () => {
   
   const [clothes, setClothes] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 옷 데이터 로드
   useEffect(() => {
-    // API 연동 필요: 옷 상세 정보 조회
     const loadClothes = async () => {
       setIsLoading(true);
       try {
-        // 목업 데이터 사용
-        const found = mockClothes.find(item => item.id === clothesId);
-        if (found) {
-          setClothes(found);
+        const response = await getClothesDetail(clothesId);
+        if (response.code === 200) {
+          setClothes(response.data);
         } else {
           showError('옷 정보를 찾을 수 없습니다.');
           navigate('/closet');
         }
       } catch (err) {
+        console.error('Failed to load clothes:', err);
         showError('옷 정보를 불러오는데 실패했습니다.');
+        navigate('/closet');
       } finally {
         setIsLoading(false);
       }
@@ -44,28 +52,28 @@ const ClosetDetailPage = () => {
     loadClothes();
   }, [clothesId, navigate, showError]);
 
-  // 이미지 네비게이션
-  const handlePrevImage = () => {
-    setCurrentImageIndex(prev => 
-      prev === 0 ? clothes.images.length - 1 : prev - 1
-    );
+  // 구매일 포맷팅
+  const formatBoughtDate = (boughtDate) => {
+    if (!boughtDate) return '-';
+    const date = new Date(boughtDate);
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
   };
 
-  const handleNextImage = () => {
-    setCurrentImageIndex(prev => 
-      prev === clothes.images.length - 1 ? 0 : prev + 1
-    );
+  // 가격 포맷팅
+  const formatPrice = (price) => {
+    if (!price) return '-';
+    return `${price.toLocaleString()}원`;
   };
 
   // 옷 삭제
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      // API 연동 필요: 옷 삭제 API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await deleteClothes(clothesId);
       success('옷이 삭제되었습니다.');
       navigate('/closet');
     } catch (err) {
+      console.error('Delete failed:', err);
       showError('삭제에 실패했습니다.');
     } finally {
       setIsDeleting(false);
@@ -103,53 +111,24 @@ const ClosetDetailPage = () => {
       <Header 
         showBack 
         title="옷 상세"
-        rightAction={() => setShowActionSheet(true)}
-        rightIcon={<HiOutlineDotsHorizontal size={24} />}
+        rightAction={clothes.isOwner ? () => setShowActionSheet(true) : undefined}
+        rightIcon={clothes.isOwner ? <HiOutlineDotsHorizontal size={24} /> : undefined}
       />
 
       <div className="closet-detail-page__content">
-        {/* 이미지 슬라이더 */}
+        {/* 이미지 */}
         <div className="closet-detail-page__image-section">
           <div className="closet-detail-page__image-container">
-            {clothes.images[0] ? (
+            {clothes.clothesImageUrl ? (
               <img 
-                src={clothes.images[currentImageIndex]} 
-                alt={clothes.productName}
+                src={clothes.clothesImageUrl} 
+                alt={clothes.name}
                 className="closet-detail-page__image"
               />
             ) : (
               <div className="closet-detail-page__image-placeholder">
                 이미지 없음
               </div>
-            )}
-            
-            {clothes.images.length > 1 && (
-              <>
-                <button 
-                  className="closet-detail-page__image-nav closet-detail-page__image-nav--prev"
-                  onClick={handlePrevImage}
-                >
-                  <IoChevronBack size={24} />
-                </button>
-                <button 
-                  className="closet-detail-page__image-nav closet-detail-page__image-nav--next"
-                  onClick={handleNextImage}
-                >
-                  <IoChevronForward size={24} />
-                </button>
-                
-                {/* 이미지 인디케이터 */}
-                <div className="closet-detail-page__image-indicators">
-                  {clothes.images.map((_, index) => (
-                    <span 
-                      key={index}
-                      className={`closet-detail-page__image-indicator ${
-                        index === currentImageIndex ? 'closet-detail-page__image-indicator--active' : ''
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
             )}
           </div>
         </div>
@@ -158,7 +137,7 @@ const ClosetDetailPage = () => {
         <div className="closet-detail-page__info">
           <div className="closet-detail-page__field">
             <label className="closet-detail-page__label">제품명</label>
-            <p className="closet-detail-page__value">{clothes.productName}</p>
+            <p className="closet-detail-page__value">{clothes.name || '-'}</p>
           </div>
 
           <div className="closet-detail-page__field">
@@ -168,9 +147,7 @@ const ClosetDetailPage = () => {
 
           <div className="closet-detail-page__field">
             <label className="closet-detail-page__label">가격</label>
-            <p className="closet-detail-page__value">
-              {clothes.price ? `${clothes.price}원` : '-'}
-            </p>
+            <p className="closet-detail-page__value">{formatPrice(clothes.price)}</p>
           </div>
 
           <div className="closet-detail-page__field">
@@ -180,25 +157,23 @@ const ClosetDetailPage = () => {
 
           <div className="closet-detail-page__field">
             <label className="closet-detail-page__label">구매 시기</label>
-            <p className="closet-detail-page__value">
-              {clothes.purchaseYear && clothes.purchaseMonth 
-                ? `${clothes.purchaseYear}년 ${clothes.purchaseMonth}월`
-                : '-'}
-            </p>
+            <p className="closet-detail-page__value">{formatBoughtDate(clothes.boughtDate)}</p>
           </div>
 
           <div className="closet-detail-page__field">
             <label className="closet-detail-page__label">카테고리</label>
-            <p className="closet-detail-page__value">{clothes.category || '-'}</p>
+            <p className="closet-detail-page__value">
+              {CATEGORY_LABELS[clothes.category] || clothes.category || '-'}
+            </p>
           </div>
 
           <div className="closet-detail-page__field">
             <label className="closet-detail-page__label">소재</label>
             <div className="closet-detail-page__tags">
-              {clothes.materials && clothes.materials.length > 0 ? (
-                clothes.materials.map((material, index) => (
+              {clothes.material && clothes.material.length > 0 ? (
+                clothes.material.map((item, index) => (
                   <span key={index} className="closet-detail-page__tag">
-                    {material}
+                    {item}
                   </span>
                 ))
               ) : (
@@ -210,10 +185,10 @@ const ClosetDetailPage = () => {
           <div className="closet-detail-page__field">
             <label className="closet-detail-page__label">색상</label>
             <div className="closet-detail-page__tags">
-              {clothes.colors && clothes.colors.length > 0 ? (
-                clothes.colors.map((color, index) => (
+              {clothes.color && clothes.color.length > 0 ? (
+                clothes.color.map((item, index) => (
                   <span key={index} className="closet-detail-page__tag">
-                    {color}
+                    {item}
                   </span>
                 ))
               ) : (
@@ -225,10 +200,10 @@ const ClosetDetailPage = () => {
           <div className="closet-detail-page__field">
             <label className="closet-detail-page__label">스타일 태그</label>
             <div className="closet-detail-page__tags">
-              {clothes.styleTags && clothes.styleTags.length > 0 ? (
-                clothes.styleTags.map((tag, index) => (
+              {clothes.styleTag && clothes.styleTag.length > 0 ? (
+                clothes.styleTag.map((tag, index) => (
                   <span key={index} className="closet-detail-page__tag closet-detail-page__tag--style">
-                    {tag}
+                    #{tag}
                   </span>
                 ))
               ) : (

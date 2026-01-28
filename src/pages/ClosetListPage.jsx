@@ -50,7 +50,6 @@ const ClosetListPage = () => {
       const category = selectedCategory === 'ALL' ? null : selectedCategory;
       const response = await getMyClothes(user.id, category, cursor);
       const { items, pageInfo } = response.data;
-
       if (isLoadMore) {
         setClothes(prev => [...prev, ...items]);
       } else {

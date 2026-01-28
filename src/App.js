@@ -11,6 +11,7 @@ import {
   ClosetDetailPage,
   ClosetUploadPage,
   ClothesUploadPage,
+  ClothesEditPage,
   AICoordPage,
   FeedListPage,
   FeedDetailPage,
@@ -92,6 +93,7 @@ function AppRoutes() {
         <Route path="/closet" element={<ClosetListPage />} />
         <Route path="/closet/upload" element={<ClothesUploadPage />} />
         <Route path="/closet/:clothesId" element={<ClosetDetailPage />} />
+        <Route path="/closet/:clothesId/edit" element={<ClothesEditPage />} />
 
         {/* AI 코디 */}
         <Route path="/ai-coordi" element={<AICoordPage />} />

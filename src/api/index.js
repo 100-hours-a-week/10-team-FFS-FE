@@ -292,54 +292,43 @@ export const getMyClothes = async (userId, category = null, after = null, limit 
   return apiRequest(`/users/${userId}/clothes?${params}`);
 };
 
-export const uploadClothes = async (clothesData) => {
-  const formData = new FormData();
-
-  clothesData.images.forEach((image) => {
-    formData.append('images', image);
-  });
-
-  formData.append('productName', clothesData.productName);
-  formData.append('brand', clothesData.brand || '');
-  formData.append('price', clothesData.price || '');
-  formData.append('size', clothesData.size || '');
-  formData.append('purchaseYear', clothesData.purchaseYear);
-  formData.append('purchaseMonth', clothesData.purchaseMonth);
-  formData.append('category', clothesData.category);
-  formData.append('materials', JSON.stringify(clothesData.materials || []));
-  formData.append('colors', JSON.stringify(clothesData.colors || []));
-  formData.append('styleTags', JSON.stringify(clothesData.styleTags || []));
-
-  return apiRequest('/closet', {
-    method: 'POST',
-    body: formData,
-  });
-};
-
+/**
+ * 옷 상세 조회
+ * @param {string|number} clothesId - 옷 ID
+ */
 export const getClothesDetail = async (clothesId) => {
-  return apiRequest(`/closet/${clothesId}`);
-};
-
-export const updateClothes = async (clothesId, clothesData) => {
-  return apiRequest(`/closet/${clothesId}`, {
-    method: 'PUT',
-    body: JSON.stringify(clothesData),
+  return apiRequest(`/clothes/${clothesId}`, {
+    method: 'GET',
   });
 };
 
+/**
+ * 옷 삭제
+ * @param {string|number} clothesId - 옷 ID
+ */
 export const deleteClothes = async (clothesId) => {
-  return apiRequest(`/closet/${clothesId}`, {
+  return apiRequest(`/clothes/${clothesId}`, {
     method: 'DELETE',
   });
 };
 
-export const analyzeClothesImage = async (imageFile) => {
-  const formData = new FormData();
-  formData.append('image', imageFile);
-
-  return apiRequest('/ai/analyze-clothes', {
-    method: 'POST',
-    body: formData,
+/**
+ * 옷 정보 수정
+ * @param {string|number} clothesId - 옷 ID
+ * @param {Object} clothesData - 수정할 옷 정보
+ * @param {string} [clothesData.name] - 제품명
+ * @param {string} [clothesData.brand] - 브랜드
+ * @param {number} [clothesData.price] - 가격
+ * @param {string} [clothesData.size] - 사이즈
+ * @param {string} [clothesData.boughtDate] - 구매일 (YYYY-MM-DD)
+ * @param {string} [clothesData.category] - 카테고리
+ * @param {string[]} [clothesData.material] - 소재
+ * @param {string[]} [clothesData.color] - 색상
+ */
+export const updateClothes = async (clothesId, clothesData) => {
+  return apiRequest(`/clothes/${clothesId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(clothesData),
   });
 };
 
@@ -424,6 +413,7 @@ export const createClothes = async (clothesData) => {
     body: JSON.stringify(body),
   });
 };
+
 
 /* ==============================================
    타인 옷장 관련 API
