@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { kakaoLogin } from '../api';
+import { kakaoLogin, setUserId } from '../api';
 import { FullPageLoading } from '../components/common';
 import './KakaoCallbackPage.css';
 
@@ -47,6 +47,7 @@ const KakaoCallbackPage = () => {
 
         if (isRegistered) {
           // 기존 회원: 로그인 처리 후 옷장 페이지로 이동
+          setUserId(userId);
           await login(accessToken, { id: userId });
           success('로그인 되었습니다');
           navigate('/closet', { replace: true });

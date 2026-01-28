@@ -130,7 +130,7 @@ const FeedDetailPage = () => {
         author: {
           id: item.userProfile.userId,
           profileImage: item.userProfile.userProfileImageUrl,
-          nickname: item.userProfile.userNickname,
+          nickname: item.userProfile.nickname,
         },
         replyInfo: item.replyInfo || { hasReplies: false, replyCount: 0 },
         replies: [],
@@ -172,7 +172,7 @@ const FeedDetailPage = () => {
         author: {
           id: item.userProfile.userId,
           profileImage: item.userProfile.userProfileImageUrl,
-          nickname: item.userProfile.userNickname,
+          nickname: item.userProfile.nickname,
         },
       }));
       
@@ -210,7 +210,7 @@ const FeedDetailPage = () => {
       const mappedUsers = items.map(item => ({
         id: item.userProfile.userId,
         profileImage: item.userProfile.userProfileImageUrl,
-        nickname: item.userProfile.userNickname,
+        nickname: item.userProfile.nickname,
         isFollowing: item.isFollowing,
       }));
       
@@ -403,7 +403,7 @@ const FeedDetailPage = () => {
           author: {
             id: response.data.userProfile.userId,
             profileImage: response.data.userProfile.userProfileImageUrl,
-            nickname: response.data.userProfile.userNickname,
+            nickname: response.data.userProfile.nickname,
           },
         };
 

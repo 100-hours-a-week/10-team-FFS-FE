@@ -10,6 +10,11 @@ const getAccessToken = () => localStorage.getItem('accessToken');
 const setAccessToken = (token) => localStorage.setItem('accessToken', token);
 const removeAccessToken = () => localStorage.removeItem('accessToken');
 
+// userId 관리
+const getUserId = () => localStorage.getItem('userId');
+const setUserId = (userId) => localStorage.setItem('userId', String(userId));
+const removeUserId = () => localStorage.removeItem('userId');
+
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint, options = {}) => {
@@ -171,14 +176,20 @@ export const logout = async () => {
     method: 'DELETE',
   });
   removeAccessToken();
+  removeUserId();
   return result;
 };
 
+/**
+ * 회원 탈퇴
+ * DELETE /api/v1/users
+ */
 export const deleteAccount = async () => {
-  const result = await apiRequest('/auth/withdraw', {
+  const result = await apiRequest('/users', {
     method: 'DELETE',
   });
   removeAccessToken();
+  removeUserId();
   return result;
 };
 
@@ -767,4 +778,4 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
-export { getAccessToken, setAccessToken, removeAccessToken };
+export { getAccessToken, setAccessToken, removeAccessToken, getUserId, setUserId, removeUserId };

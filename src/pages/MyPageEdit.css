@@ -1,4 +1,4 @@
-/* MyPage Edit Styles */
+/* V1 MyPage Edit Styles - 계정 관리 (로그아웃/회원탈퇴) */
 
 .mypage-edit {
   display: flex;
@@ -12,96 +12,22 @@
   padding: var(--spacing-lg);
 }
 
-/* 프로필 이미지 */
-.mypage-edit__avatar-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xl);
-}
-
-.mypage-edit__avatar {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.mypage-edit__avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.mypage-edit__avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  background-color: var(--color-bg-tertiary);
-}
-
-.mypage-edit__avatar-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.4);
-  color: white;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
-.mypage-edit__avatar:hover .mypage-edit__avatar-overlay {
-  opacity: 1;
-}
-
-.mypage-edit__avatar-btn {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.mypage-edit__avatar-btn:hover {
-  color: var(--color-text-primary);
-}
-
-/* 필드 */
-.mypage-edit__field {
-  margin-bottom: var(--spacing-lg);
-}
-
-/* 구분선 */
-.mypage-edit__divider {
-  height: 1px;
-  background-color: var(--color-border-light);
-  margin: var(--spacing-xl) 0;
-}
-
-/* 계정 관리 */
+/* 계정 관리 버튼 */
 .mypage-edit__account {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
 }
 
 .mypage-edit__account-btn {
   width: 100%;
   padding: var(--spacing-md);
   font-size: var(--font-size-md);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   background: none;
   border: none;
+  border-bottom: 1px solid var(--color-border-light);
   text-align: left;
   cursor: pointer;
-  border-radius: var(--radius-md);
   transition: background-color var(--transition-fast);
 }
 

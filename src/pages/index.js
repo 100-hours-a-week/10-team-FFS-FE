@@ -11,7 +11,6 @@ export { default as FeedCreatePage } from './FeedCreatePage';
 export { default as ProfilePage } from './ProfilePage';
 export { default as OtherClosetListPage } from './OtherClosetListPage';
 export { default as OtherClosetDetailPage } from './OtherClosetDetailPage';
-export { default as MyPage } from './MyPage';
 export { default as MyPageEdit } from './MyPageEdit';
 export { default as ClothesUploadPage } from './ClothesUploadPage';
 export { default as ClothesEditPage } from './ClothesEditPage';
