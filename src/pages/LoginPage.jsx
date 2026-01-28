@@ -1,41 +1,16 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
 import { RiKakaoTalkFill } from 'react-icons/ri';
 import './LoginPage.css';
 
-const LoginPage = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-  const { success } = useToast();
+// 카카오 로그인 설정
+const KAKAO_CLIENT_ID = process.env.REACT_APP_KAKAO_CLIENT_ID;
+const KAKAO_REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI;
 
-  // API 연동 필요: 실제 카카오 로그인 연동
-  const handleKakaoLogin = async () => {
-    try {
-      // 카카오 로그인 URL로 리다이렉트
-      // window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
-      
-      // 목업: 로그인 성공 시뮬레이션
-      const mockToken = 'mock_access_token_' + Date.now();
-      const mockUser = {
-        id: 'user_001',
-        nickname: 'sample_nickname',
-        profileImage: null,
-        isNewUser: false, // true면 추가정보 입력 페이지로
-      };
-      
-      await login(mockToken, mockUser);
-      
-      if (mockUser.isNewUser) {
-        navigate('/additional-info');
-      } else {
-        success('로그인 되었습니다');
-        navigate('/closet');
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
+const LoginPage = () => {
+  // 카카오 로그인 페이지로 리다이렉트
+  const handleKakaoLogin = () => {
+    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
+    window.location.href = kakaoAuthUrl;
   };
 
   return (
