@@ -5,7 +5,7 @@
 
 // 현재 로그인 사용자
 export const mockCurrentUser = {
-  id: 'user_001',
+  id: 1,
   nickname: 'sample_nickname',
   profileImage: null, // 기본 이미지
   birthday: '1995-03-15',
