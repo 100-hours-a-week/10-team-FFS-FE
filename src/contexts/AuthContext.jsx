@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { mockCurrentUser } from '../mocks/data';
-import { getAccessToken, setAccessToken, removeAccessToken } from '../api';
+import { getAccessToken, setAccessToken, removeAccessToken, removeUserId, getUserId, logout as logoutAPI } from '../api';
 
 const AuthContext = createContext(null);
 
@@ -21,17 +20,17 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const token = getAccessToken();
-      
-      if (token) {
-        // API 연동 필요: 실제 사용자 정보 조회
-        // const userData = await getCurrentUser();
-        // setUser(userData);
-        
-        // 목업 데이터 사용
-        setUser(mockCurrentUser);
+      const userId = getUserId();
+
+      if (token && userId) {
+        // localStorage에 저장된 userId로 user 객체 설정
+        setUser({ id: Number(userId) });
         setIsAuthenticated(true);
+      } else if (token) {
+        // userId가 없으면 토큰도 무효화 (비정상 상태)
+        removeAccessToken();
       }
-      
+
       setIsLoading(false);
     };
 
@@ -39,25 +38,32 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // 로그인
-  const login = useCallback(async (accessToken, userData = null) => {
+  const login = useCallback(async (accessToken, userData) => {
     setAccessToken(accessToken);
-    
-    // API 연동 필요: 실제 사용자 정보로 대체
-    const userInfo = userData || mockCurrentUser;
-    setUser(userInfo);
-    setIsAuthenticated(true);
-    
-    return userInfo;
+
+    if (userData?.id) {
+      setUser({ id: Number(userData.id) });
+      setIsAuthenticated(true);
+      return userData;
+    }
+
+    // userData가 없으면 로그인 실패 처리
+    throw new Error('User data is required for login');
   }, []);
 
   // 로그아웃
   const logout = useCallback(async () => {
-    // API 연동 필요: 서버 로그아웃 API 호출
-    // await logoutAPI();
-    
-    removeAccessToken();
-    setUser(null);
-    setIsAuthenticated(false);
+    try {
+      await logoutAPI();
+    } catch (err) {
+      console.error('로그아웃 API 호출 실패:', err);
+    } finally {
+      // API 실패해도 클라이언트 상태는 정리
+      removeAccessToken();
+      removeUserId();
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   }, []);
 
   // 사용자 정보 업데이트
