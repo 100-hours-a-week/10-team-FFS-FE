@@ -7,7 +7,7 @@ import { useToast } from '../contexts/ToastContext';
 import { getUserProfile, getUserFeeds } from '../api';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import FeedList from './FeedList';
-import './MyPage.css';
+import './ProfilePage.css';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
