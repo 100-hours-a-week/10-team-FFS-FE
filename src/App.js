@@ -17,7 +17,6 @@ import {
   ProfilePage,
   OtherClosetListPage,
   OtherClosetDetailPage,
-  MyPage,
   MyPageEdit,
 } from './pages';
 import { FullPageLoading } from './components/common';
@@ -101,13 +100,12 @@ function AppRoutes() {
         <Route path="/feed/:feedId" element={<FeedDetailPage />} />
         <Route path="/feed/:feedId/edit" element={<FeedCreatePage />} />
 
-        {/* 타인 프로필 */}
+        {/* 프로필 */}
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/profile/:userId/closet" element={<OtherClosetListPage />} />
         <Route path="/profile/:userId/closet/:clothesId" element={<OtherClosetDetailPage />} />
 
-        {/* 마이페이지 */}
-        <Route path="/mypage" element={<MyPage />} />
+        {/* 프로필 편집 */}
         <Route path="/mypage/edit" element={<MyPageEdit />} />
       </Route>
 

@@ -138,7 +138,7 @@ const ProfilePage = () => {
           <div className="my-page__buttons">
             {profile.isMe &&(
               <button className="my-page__btn" onClick={() => navigate('/mypage/edit')}>
-                프로필 편집
+                계정 관리
               </button>
             )}
             <button className="my-page__btn" onClick={handleClosetClick}>
