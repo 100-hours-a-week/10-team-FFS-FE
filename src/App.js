@@ -10,6 +10,7 @@ import {
   ClosetListPage,
   ClosetDetailPage,
   ClosetUploadPage,
+  ClothesUploadPage,
   AICoordPage,
   FeedListPage,
   FeedDetailPage,
@@ -89,7 +90,7 @@ function AppRoutes() {
         
         {/* 옷장 */}
         <Route path="/closet" element={<ClosetListPage />} />
-        <Route path="/closet/upload" element={<ClosetUploadPage />} />
+        <Route path="/closet/upload" element={<ClothesUploadPage />} />
         <Route path="/closet/:clothesId" element={<ClosetDetailPage />} />
 
         {/* AI 코디 */}
@@ -109,6 +110,8 @@ function AppRoutes() {
         {/* 마이페이지 */}
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/edit" element={<MyPageEdit />} />
+
+        <Route path="/test" element={<ClosetUploadPage />} />
       </Route>
 
       {/* 404 - 존재하지 않는 경로 */}

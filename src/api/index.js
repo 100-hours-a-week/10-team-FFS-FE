@@ -210,6 +210,7 @@ export const getPresignedUrls = async (purpose, files) => {
  * @returns {Promise<Response>}
  */
 export const uploadToS3 = async (presignedUrl, file) => {
+  if (presignedUrl === "sample") return;
   const response = await fetch(presignedUrl, {
     method: 'PUT',
     headers: {
@@ -339,6 +340,88 @@ export const analyzeClothesImage = async (imageFile) => {
   return apiRequest('/ai/analyze-clothes', {
     method: 'POST',
     body: formData,
+  });
+};
+
+// ============================================
+// 옷 분석 관련 api
+// ============================================
+
+/**
+ * 옷 분석 요청
+ * @param {number[]} fileIds - 분석할 파일 ID 배열
+ */
+export const requestClothesAnalysis = async (fileIds) => {
+  return apiRequest('/clothes/analyses', {
+    method: 'POST',
+    body: JSON.stringify({ fileIds }),
+  });
+};
+
+/**
+ * 옷 분석 결과 조회 (polling용)
+ * @param {string} batchId - 배치 ID
+ */
+export const getClothesAnalysisResult = async (batchId) => {
+  return apiRequest(`/clothes/analyses/${batchId}`, {
+    method: 'GET',
+  });
+};
+
+/**
+ * 옷 등록
+ * @param {Object} clothesData - 옷 정보
+ * @param {string} clothesData.taskId - 태스크 ID (필수)
+ * @param {number} clothesData.fileId - 파일 ID (필수)
+ * @param {string} clothesData.category - 카테고리 (필수)
+ * @param {string[]} clothesData.styleTag - 스타일 태그 (필수)
+ * @param {string} [clothesData.name] - 제품명
+ * @param {string} [clothesData.brand] - 브랜드
+ * @param {number} [clothesData.price] - 가격
+ * @param {string} [clothesData.size] - 사이즈
+ * @param {string} [clothesData.boughtDate] - 구매일 (YYYY-MM-DD)
+ * @param {string[]} [clothesData.material] - 소재
+ * @param {string[]} [clothesData.color] - 색상
+ */
+export const createClothes = async (clothesData) => {
+  const body = {
+    taskId: clothesData.taskId,
+    fileId: clothesData.fileId,
+    category: clothesData.category,
+    styleTag: clothesData.styleTag,
+  };
+
+  if (clothesData.name) {
+    body.name = clothesData.name;
+  }
+
+  if (clothesData.brand) {
+    body.brand = clothesData.brand;
+  }
+
+  if (clothesData.price) {
+    body.price = clothesData.price;
+  }
+
+  if (clothesData.size) {
+    body.size = clothesData.size;
+  }
+
+  if (clothesData.boughtDate) {
+    body.boughtDate = clothesData.boughtDate;
+  }
+
+  if (clothesData.material && clothesData.material.length > 0) {
+    body.material = clothesData.material;
+  }
+
+  if (clothesData.color && clothesData.color.length > 0) {
+    body.color = clothesData.color;
+  }
+
+  return apiRequest('/clothes', {
+    method: 'POST',
+    body: JSON.stringify(body),
   });
 };
 
