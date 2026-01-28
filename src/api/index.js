@@ -658,11 +658,11 @@ export const getUserProfile = async (userId) => {
 };
 
 export const getUserFeeds = async (userId, cursor = null, limit = 12) => {
-  const params = new URLSearchParams();
-  params.append('limit', limit);
-  if (cursor) params.append('after', cursor);
-
-  return apiRequest(`/users/${userId}/feeds?${params}`);
+  let url = `/users/${userId}/feeds?limit=${limit}`
+  if(cursor){
+    url += `&after=${cursor}`;
+  }
+  return apiRequest(url);
 };
 
 export const updateMyProfile = async (profileData) => {
