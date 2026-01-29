@@ -322,7 +322,7 @@ const ClothesUploadPage = () => {
       if (allSaved && completedResults.length > 0) {
         // 모든 항목 저장 완료 시 옷장으로 이동
         setTimeout(() => {
-          navigate('/closet');
+          navigate(-1);
         }, 500);
       }
     } catch (err) {

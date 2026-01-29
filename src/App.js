@@ -86,13 +86,13 @@ function AppRoutes() {
         }
       >
         {/* 기본 경로 리다이렉트 */}
-        <Route index element={<Navigate to="/closet" replace />} />
+        <Route index element={<Navigate to="/feed" replace />} />
         
         {/* 옷장 */}
-        <Route path="/closet" element={<ClosetListPage />} />
+        <Route path="/closet/:userId" element={<ClosetListPage />} />
         <Route path="/closet/upload" element={<ClothesUploadPage />} />
-        <Route path="/closet/:clothesId" element={<ClosetDetailPage />} />
-        <Route path="/closet/:clothesId/edit" element={<ClothesEditPage />} />
+        <Route path="/clothes/:clothesId" element={<ClosetDetailPage />} />
+        <Route path="/clothes/:clothesId/edit" element={<ClothesEditPage />} />
 
         {/* AI 코디 */}
         <Route path="/ai-coordi" element={<AICoordPage />} />
@@ -115,7 +115,7 @@ function AppRoutes() {
       </Route>
 
       {/* 404 - 존재하지 않는 경로 */}
-      <Route path="*" element={<Navigate to="/closet" replace />} />
+      <Route path="*" element={<Navigate to="/feed" replace />} />
     </Routes>
   );
 }

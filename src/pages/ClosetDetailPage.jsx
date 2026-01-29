@@ -38,12 +38,12 @@ const ClosetDetailPage = () => {
           setClothes(response.data);
         } else {
           showError('옷 정보를 찾을 수 없습니다.');
-          navigate('/closet');
+          navigate(-1);
         }
       } catch (err) {
         console.error('Failed to load clothes:', err);
         showError('옷 정보를 불러오는데 실패했습니다.');
-        navigate('/closet');
+        navigate(-1);
       } finally {
         setIsLoading(false);
       }

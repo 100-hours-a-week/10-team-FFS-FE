@@ -167,7 +167,7 @@ const ClothesEditPage = () => {
 
       await updateClothes(clothesId, requestBody);
       success('옷 정보가 수정되었습니다.');
-      navigate(`/closet/${clothesId}`);
+      navigate(`/clothes/${clothesId}`);
     } catch (err) {
       console.error('Update failed:', err);
       showError(err.message || '수정에 실패했습니다.');

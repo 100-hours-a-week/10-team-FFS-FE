@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { ClothesCardSkeleton, ActionSheet } from '../components/common';
-import { getMyClothes } from '../api';
+import { Header } from '../components/layout';
+import { ClothesCardSkeleton, ActionSheet, Spinner } from '../components/common';
+import { getClosetList, getUserProfile } from '../api';
 import { IoAdd } from 'react-icons/io5';
 import './ClosetListPage.css';
 
-// 카테고리 목록 (API 명세에 맞게 수정)
+// 카테고리 목록
 const CATEGORIES = [
   { id: 'ALL', label: 'ALL' },
   { id: 'TOP', label: '상의' },
@@ -20,9 +21,14 @@ const CATEGORIES = [
 
 const ClosetListPage = () => {
   const navigate = useNavigate();
+  const { userId } = useParams();
   const { user } = useAuth();
   const { error: showError } = useToast();
 
+  // 본인 옷장인지 확인
+  const isMyCloset = user?.id?.toString() === userId?.toString();
+
+  const [ownerInfo, setOwnerInfo] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [clothes, setClothes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,9 +40,24 @@ const ClosetListPage = () => {
   const observerRef = useRef(null);
   const loadMoreRef = useRef(null);
 
+  // 옷장 주인 정보 조회
+  useEffect(() => {
+    const fetchOwnerInfo = async () => {
+      try {
+          const profileResponse = await getUserProfile(userId);
+          setOwnerInfo(profileResponse.data);
+        } catch (err) {
+          console.error('Failed to fetch owner info:', err);
+          setOwnerInfo({ nickname: '알수없는 사용자' });
+        }
+    };
+
+    fetchOwnerInfo();
+  }, [userId, isMyCloset, user?.nickname]);
+
   // 옷 목록 조회
   const fetchClothes = useCallback(async (cursor = null, isLoadMore = false) => {
-    if (!user?.id) {
+    if (!userId) {
       return;
     }
 
@@ -48,8 +69,9 @@ const ClosetListPage = () => {
 
     try {
       const category = selectedCategory === 'ALL' ? null : selectedCategory;
-      const response = await getMyClothes(user.id, category, cursor);
+      const response = await getClosetList(userId, category, cursor);
       const { items, pageInfo } = response.data;
+      
       if (isLoadMore) {
         setClothes(prev => [...prev, ...items]);
       } else {
@@ -59,12 +81,18 @@ const ClosetListPage = () => {
       setHasMore(pageInfo.hasNextPage);
       setNextCursor(pageInfo.nextCursor);
     } catch (err) {
-      showError('옷 목록을 불러오는데 실패했습니다.');
+      console.error('Failed to fetch clothes:', err);
+      if (err.message === 'target_user_not_found') {
+        showError('존재하지 않는 사용자입니다.');
+        navigate(-1);
+      } else {
+        showError('옷 목록을 불러오는데 실패했습니다.');
+      }
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [user?.id, selectedCategory, showError]);
+  }, [userId, selectedCategory, showError, navigate]);
 
   // 초기 로드 및 카테고리 변경 시 다시 로드
   useEffect(() => {
@@ -72,7 +100,7 @@ const ClosetListPage = () => {
     setNextCursor(null);
     setHasMore(true);
     fetchClothes(null, false);
-  }, [user?.id, selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId, selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 무한 스크롤 (IntersectionObserver)
   useEffect(() => {
@@ -104,7 +132,7 @@ const ClosetListPage = () => {
 
   // 옷 상세 페이지로 이동
   const handleClothesClick = (clothesId) => {
-    navigate(`/closet/${clothesId}`);
+    navigate(`/clothes/${clothesId}`);
   };
 
   // 옷 등록 방식 선택
@@ -133,17 +161,24 @@ const ClosetListPage = () => {
   return (
     <div className="closet-list-page">
       {/* 헤더 */}
-      <div className="closet-list-page__header">
-        <h1 className="closet-list-page__title">
-          {user?.nickname || '00'} 님의 옷장
-        </h1>
-        <button
-          className="closet-list-page__add-btn"
-          onClick={handleUploadClick}
-        >
-          <IoAdd size={24} />
-        </button>
-      </div>
+      {!isMyCloset ? (
+        <Header showBack title = {`${ownerInfo?.userProfile.nickname || '알수없는 사용자'} 님의 옷장`} />
+      ):(
+        <>
+        <Header 
+        title = {`${ownerInfo?.userProfile.nickname || '알수없는 사용자'} 님의 옷장`}
+        rightElement={
+          <button
+            className="closet-list-page__add-btn"
+            onClick={handleUploadClick}
+          >
+            <IoAdd size={24} />
+          </button>
+        }
+        />
+        
+        </>
+      )}
 
       {/* 카테고리 필터 */}
       <div className="closet-list-page__categories">
@@ -169,7 +204,7 @@ const ClosetListPage = () => {
           </div>
         ) : clothes.length === 0 ? (
           <div className="closet-list-page__empty">
-            <p>등록한 옷이 없습니다</p>
+            <p>{isMyCloset ? '등록한 옷이 없습니다' : '등록된 옷이 없습니다'}</p>
           </div>
         ) : (
           <div className="closet-list-page__grid">
