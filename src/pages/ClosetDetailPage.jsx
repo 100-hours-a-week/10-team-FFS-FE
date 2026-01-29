@@ -83,7 +83,7 @@ const ClosetDetailPage = () => {
 
   // 옷 수정
   const handleEdit = () => {
-    navigate(`/closet/${clothesId}/edit`);
+    navigate(`/clothes/${clothesId}/edit`);
   };
 
   const actions = [
