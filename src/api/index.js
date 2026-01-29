@@ -3,7 +3,7 @@
    모든 API 함수를 여기서 관리합니다.
    ============================================== */
 
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:8080/api/v1';
 
 // 토큰 관리
 const getAccessToken = () => localStorage.getItem('accessToken');
