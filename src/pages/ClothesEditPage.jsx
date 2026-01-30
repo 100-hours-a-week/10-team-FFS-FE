@@ -167,7 +167,7 @@ const ClothesEditPage = () => {
 
       await updateClothes(clothesId, requestBody);
       success('옷 정보가 수정되었습니다.');
-      navigate(`/closet/${clothesId}`);
+      navigate(`/clothes/${clothesId}`);
     } catch (err) {
       console.error('Update failed:', err);
       showError(err.message || '수정에 실패했습니다.');
@@ -330,7 +330,6 @@ const ClothesEditPage = () => {
         {/* 소재 */}
         <div className="clothes-edit-page__section">
           <label className="clothes-edit-page__label">소재</label>
-          <div className="clothes-edit-page__tags-container">
             <div className="clothes-edit-page__tags">
               {formData.materials.map((material, index) => (
                 <span key={index} className="clothes-edit-page__tag">
@@ -360,13 +359,11 @@ const ClothesEditPage = () => {
                 </button>
               </div>
             </div>
-          </div>
         </div>
 
         {/* 색상 */}
         <div className="clothes-edit-page__section">
           <label className="clothes-edit-page__label">색</label>
-          <div className="clothes-edit-page__tags-container">
             <div className="clothes-edit-page__tags">
               {formData.colors.map((color, index) => (
                 <span key={index} className="clothes-edit-page__tag">
@@ -396,7 +393,6 @@ const ClothesEditPage = () => {
                 </button>
               </div>
             </div>
-          </div>
         </div>
 
         {/* 스타일 태그 (수정 불가) */}

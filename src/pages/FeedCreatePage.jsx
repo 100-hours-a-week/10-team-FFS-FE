@@ -1,20 +1,33 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Button, AlertModal, Modal, Spinner } from '../components/common';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { mockClothes } from '../mocks/data';
 import { fileToDataUrl, isValidUploadImage } from '../utils/helpers';
 import { IoAdd, IoClose, IoCheckmark } from 'react-icons/io5';
-import { createFeed, updateFeed, getFeedDetail, getPresignedUrls, uploadToS3 } from '../api';
+import { createFeed, updateFeed, getFeedDetail, getPresignedUrls, uploadToS3, getClosetList, getClothesDetails } from '../api';
 import './FeedCreatePage.css';
+
+// 카테고리 목록
+const CATEGORIES = [
+  { id: 'ALL', label: 'ALL' },
+  { id: 'TOP', label: '상의' },
+  { id: 'BOTTOM', label: '하의' },
+  { id: 'DRESS', label: '원피스' },
+  { id: 'SHOES', label: '신발' },
+  { id: 'ACCESSORY', label: '악세사리' },
+  { id: 'ETC', label: '기타' },
+];
 
 const FeedCreatePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { feedId } = useParams(); // 수정 모드일 때 feedId가 있음
+  const { feedId } = useParams();
+  const { user } = useAuth();
   const { success, error: showError } = useToast();
   const fileInputRef = useRef(null);
+  const clothesListRef = useRef(null);
 
   const isEditMode = !!feedId;
 
@@ -28,6 +41,15 @@ const FeedCreatePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showClothesModal, setShowClothesModal] = useState(false);
+
+  // 옷 선택 모달 관련 상태
+  const [myClothes, setMyClothes] = useState([]);
+  const [clothesCategory, setClothesCategory] = useState('ALL');
+  const [isLoadingClothes, setIsLoadingClothes] = useState(false);
+  const [isLoadingMoreClothes, setIsLoadingMoreClothes] = useState(false);
+  const [hasMoreClothes, setHasMoreClothes] = useState(true);
+  const [clothesCursor, setClothesCursor] = useState(null);
+  const [tempSelectedClothes, setTempSelectedClothes] = useState([]); // 모달용 임시 상태
 
   // 500자 넘으면 경고
   const MAX_CONTENT_LENGTH = 500;
@@ -49,7 +71,7 @@ const FeedCreatePage = () => {
       // 기존 이미지 설정 (수정 불가, 표시용)
       setImages(data.imageUrls.map(url => ({
         preview: url,
-        isExisting: true, // 기존 이미지 표시
+        isExisting: true,
       })));
 
       // 기존 내용 설정
@@ -58,11 +80,9 @@ const FeedCreatePage = () => {
       // 기존 옷 정보 설정
       if (data.clothes && data.clothes.length > 0) {
         setSelectedClothes(data.clothes.map(c => ({
-          id: c.id,
+          clothesId: c.id,
           imageUrl: c.imageUrl,
-          productName: c.name,
-          price: c.price,
-          images: [c.imageUrl], // mockClothes 형식과 맞추기
+          name: c.name,
         })));
       }
     } catch (err) {
@@ -98,9 +118,61 @@ const FeedCreatePage = () => {
     }
   }, [presetImage, isEditMode, showError]);
 
+  // 내 옷장 옷 목록 조회
+  const fetchMyClothes = useCallback(async (cursor = null, isLoadMore = false) => {
+    if (!user?.id) return;
+
+    if (isLoadMore) {
+      setIsLoadingMoreClothes(true);
+    } else {
+      setIsLoadingClothes(true);
+    }
+
+    try {
+      const category = clothesCategory === 'ALL' ? null : clothesCategory;
+      const response = await getClosetList(user.id, category, cursor);
+      const { items, pageInfo } = response.data;
+
+      if (isLoadMore) {
+        setMyClothes(prev => [...prev, ...items]);
+      } else {
+        setMyClothes(items);
+      }
+
+      setHasMoreClothes(pageInfo.hasNextPage);
+      setClothesCursor(pageInfo.nextCursor);
+    } catch (err) {
+      console.error('Failed to fetch my clothes:', err);
+      showError('옷 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingClothes(false);
+      setIsLoadingMoreClothes(false);
+    }
+  }, [user?.id, clothesCategory, showError]);
+
+  // 모달 열릴 때 옷 목록 로드 및 임시 상태 초기화
+  useEffect(() => {
+    if (showClothesModal) {
+      setTempSelectedClothes([...selectedClothes]); // 현재 상태 복사
+      setMyClothes([]);
+      setClothesCursor(null);
+      setHasMoreClothes(true);
+      fetchMyClothes(null, false);
+    }
+  }, [showClothesModal, clothesCategory]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 무한 스크롤 핸들러
+  const handleClothesScroll = useCallback((e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    
+    if (scrollHeight - scrollTop - clientHeight < 100 && hasMoreClothes && !isLoadingClothes && !isLoadingMoreClothes && clothesCursor) {
+      fetchMyClothes(clothesCursor, true);
+    }
+  }, [hasMoreClothes, isLoadingClothes, isLoadingMoreClothes, clothesCursor, fetchMyClothes]);
+
   // 이미지 선택 (생성 모드에서만)
   const handleImageSelect = async (e) => {
-    if (isEditMode) return; // 수정 모드에서는 이미지 변경 불가
+    if (isEditMode) return;
 
     const files = Array.from(e.target.files || []);
     
@@ -137,16 +209,16 @@ const FeedCreatePage = () => {
 
   // 이미지 삭제 (생성 모드에서만)
   const handleImageRemove = (index) => {
-    if (isEditMode) return; // 수정 모드에서는 이미지 변경 불가
+    if (isEditMode) return;
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  // 옷 선택 토글
+  // 옷 선택 토글 (모달 내에서 임시 상태 조작)
   const handleClothesToggle = (clothes) => {
-    setSelectedClothes(prev => {
-      const isSelected = prev.some(c => c.id === clothes.id);
+    setTempSelectedClothes(prev => {
+      const isSelected = prev.some(c => c.clothesId === clothes.clothesId);
       if (isSelected) {
-        return prev.filter(c => c.id !== clothes.id);
+        return prev.filter(c => c.clothesId !== clothes.clothesId);
       } else {
         if (prev.length >= 10) {
           showError('최대 10개까지 선택 가능합니다.');
@@ -155,6 +227,55 @@ const FeedCreatePage = () => {
         return [...prev, clothes];
       }
     });
+  };
+
+  // 선택된 옷 제거 (메인 화면에서)
+  const handleClothesRemove = (clothes) => {
+    setSelectedClothes(prev => prev.filter(c => c.clothesId !== clothes.clothesId));
+  };
+
+  // 카테고리 변경
+  const handleCategoryChange = (categoryId) => {
+    if (categoryId !== clothesCategory) {
+      setClothesCategory(categoryId);
+    }
+  };
+
+  // 옷 선택 모달 완료
+  const handleClothesModalComplete = async () => {
+    if (tempSelectedClothes.length === 0) {
+      setSelectedClothes([]);
+      setShowClothesModal(false);
+      return;
+    }
+
+    try {
+      // 선택된 옷들의 상세 정보 가져오기
+      const clothesIds = tempSelectedClothes.map(c => c.clothesId);
+      const response = await getClothesDetails(clothesIds);
+      
+      // 응답 데이터로 selectedClothes 업데이트
+      const detailedClothes = response.data.map(item => ({
+        clothesId: item.id,
+        imageUrl: item.imageUrl,
+        name: item.name,
+        price: item.price,
+      }));
+      
+      setSelectedClothes(detailedClothes);
+    } catch (err) {
+      console.error('Failed to get clothes details:', err);
+      // 실패해도 임시 상태 반영
+      setSelectedClothes(tempSelectedClothes);
+    }
+    
+    setShowClothesModal(false);
+  };
+
+  // 옷 선택 모달 취소 (기존 상태 유지)
+  const handleClothesModalCancel = () => {
+    setShowClothesModal(false);
+    // tempSelectedClothes는 버려짐 - 다음에 모달 열 때 다시 selectedClothes로 초기화됨
   };
 
   // 폼 제출
@@ -167,20 +288,14 @@ const FeedCreatePage = () => {
     setIsSubmitting(true);
     try {
       if (isEditMode) {
-        // 수정 모드
         const feedData = {};
-
-        // content는 항상 전송 (빈 문자열도 가능)
         feedData.content = content.trim();
-
-        // clothesIds도 항상 전송 (빈 배열도 가능)
-        feedData.clothesIds = selectedClothes.map(c => c.id);
+        feedData.clothesIds = selectedClothes.map(c => c.clothesId);
 
         await updateFeed(feedId, feedData);
         success('수정이 완료되었습니다.');
         navigate(`/feed/${feedId}`);
       } else {
-        // 생성 모드
         // 1. Presigned URL 발급
         const files = images.map(img => ({
           name: img.file.name,
@@ -204,7 +319,7 @@ const FeedCreatePage = () => {
         };
 
         if (selectedClothes.length > 0) {
-          feedData.clothesIds = selectedClothes.map(c => c.id);
+          feedData.clothesIds = selectedClothes.map(c => c.clothesId);
         }
 
         if (content.trim()) {
@@ -307,7 +422,6 @@ const FeedCreatePage = () => {
     }
   };
 
-
   return (
     <div className="feed-create-page">
       <Header 
@@ -343,7 +457,6 @@ const FeedCreatePage = () => {
               disabled={isEditMode}
             />
             
-            {/* 생성 모드에서만 추가 버튼 표시 */}
             {!isEditMode && images.length < 5 && (
               <button 
                 className="feed-create-page__image-add"
@@ -356,7 +469,6 @@ const FeedCreatePage = () => {
             {images.map((image, index) => (
               <div key={index} className="feed-create-page__image-item">
                 <img src={image.preview} alt={`피드 이미지 ${index + 1}`} />
-                {/* 생성 모드에서만 삭제 버튼 표시 */}
                 {!isEditMode && (
                   <button 
                     className="feed-create-page__image-remove"
@@ -373,6 +485,54 @@ const FeedCreatePage = () => {
           </div>
         </div>
 
+        {/* 옷 태그 */}
+        <div className="feed-create-page__section">
+          <div className="feed-create-page__clothes-header">
+            <label className="feed-create-page__label">
+              옷 정보 추가하기
+            </label>
+            <button 
+              className="feed-create-page__clothes-add-btn"
+              onClick={() => setShowClothesModal(true)}
+            >
+              <IoAdd size={20} />
+              추가
+            </button>
+          </div>
+          
+          {selectedClothes.length > 0 ? (
+            <div className="feed-create-page__clothes-list">
+              {selectedClothes.map((item) => (
+                <div key={item.clothesId} className="feed-create-page__clothes-item">
+                  <div className="feed-create-page__clothes-image">
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.name || '옷'} />
+                    ) : (
+                      <div className="feed-create-page__clothes-placeholder">사진</div>
+                    )}
+                  </div>
+                  <div className="feed-create-page__clothes-info">
+                    <span className="feed-create-page__clothes-name">{item.name || '옷'}</span>
+                    {item.price && (
+                      <span className="feed-create-page__clothes-price">
+                        {item.price.toLocaleString()}원
+                      </span>
+                    )}
+                  </div>
+                  <button 
+                    className="feed-create-page__clothes-remove"
+                    onClick={() => handleClothesRemove(item)}
+                  >
+                    <IoClose size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="feed-create-page__clothes-empty">등록된 옷이 없습니다</p>
+          )}
+        </div>
+
         {/* 내용 입력 */}
         <div className="feed-create-page__section">
           <label className="feed-create-page__label">내용</label>
@@ -385,85 +545,93 @@ const FeedCreatePage = () => {
             maxLength={MAX_CONTENT_LENGTH}
           />
         </div>
-
-        {/* 옷 태그 */}
-        <div className="feed-create-page__section">
-          <div className="feed-create-page__clothes-header">
-            <label className="feed-create-page__label">
-              착용 아이템 ({selectedClothes.length}/10)
-            </label>
-            <button 
-              className="feed-create-page__clothes-add-btn"
-              onClick={() => setShowClothesModal(true)}
-            >
-              <IoAdd size={20} />
-              추가
-            </button>
-          </div>
-          
-          {selectedClothes.length > 0 && (
-            <div className="feed-create-page__clothes-list">
-              {selectedClothes.map((item) => (
-                <div key={item.id} className="feed-create-page__clothes-item">
-                  <div className="feed-create-page__clothes-image">
-                    {(item.images?.[0] || item.imageUrl) ? (
-                      <img src={item.images?.[0] || item.imageUrl} alt={item.productName} />
-                    ) : (
-                      <div className="feed-create-page__clothes-placeholder">사진</div>
-                    )}
-                  </div>
-                  <span className="feed-create-page__clothes-name">{item.productName}</span>
-                  <button 
-                    className="feed-create-page__clothes-remove"
-                    onClick={() => handleClothesToggle(item)}
-                  >
-                    <IoClose size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* 옷 선택 모달 */}
       <Modal
         isOpen={showClothesModal}
         onClose={() => setShowClothesModal(false)}
-        title="옷 선택"
+        title="추가할 옷을 선택해주세요"
       >
         <div className="feed-create-page__clothes-modal">
-          <div className="feed-create-page__clothes-grid">
-            {mockClothes.map((item) => {
-              const isSelected = selectedClothes.some(c => c.id === item.id);
-              return (
-                <div 
-                  key={item.id}
-                  className={`feed-create-page__clothes-grid-item ${isSelected ? 'feed-create-page__clothes-grid-item--selected' : ''}`}
-                  onClick={() => handleClothesToggle(item)}
-                >
-                  <div className="feed-create-page__clothes-grid-image">
-                    {item.images?.[0] ? (
-                      <img src={item.images[0]} alt={item.productName} />
-                    ) : (
-                      <div className="feed-create-page__clothes-placeholder">사진</div>
-                    )}
-                    {isSelected && (
-                      <div className="feed-create-page__clothes-grid-check">
-                        <IoCheckmark size={20} />
-                      </div>
-                    )}
-                  </div>
-                  <span className="feed-create-page__clothes-grid-name">
-                    {item.productName}
-                  </span>
-                </div>
-              );
-            })}
+          {/* 카테고리 필터 */}
+          <div className="feed-create-page__clothes-categories">
+            {CATEGORIES.map(category => (
+              <button
+                key={category.id}
+                className={`feed-create-page__clothes-category ${
+                  clothesCategory === category.id ? 'feed-create-page__clothes-category--active' : ''
+                }`}
+                onClick={() => handleCategoryChange(category.id)}
+              >
+                {category.label}
+              </button>
+            ))}
           </div>
+
+          {/* 옷 목록 */}
+          <div 
+            className="feed-create-page__clothes-grid-container"
+            onScroll={handleClothesScroll}
+            ref={clothesListRef}
+          >
+            {isLoadingClothes && myClothes.length === 0 ? (
+              <div className="feed-create-page__clothes-loading">
+                <Spinner />
+              </div>
+            ) : myClothes.length === 0 ? (
+              <div className="feed-create-page__clothes-empty-state">
+                <p>등록된 옷이 없습니다</p>
+              </div>
+            ) : (
+              <div className="feed-create-page__clothes-grid">
+                {myClothes.map((item) => {
+                  const isSelected = tempSelectedClothes.some(c => c.clothesId === item.clothesId);
+                  return (
+                    <div 
+                      key={item.clothesId}
+                      className={`feed-create-page__clothes-grid-item ${isSelected ? 'feed-create-page__clothes-grid-item--selected' : ''}`}
+                      onClick={() => handleClothesToggle(item)}
+                    >
+                      <div className="feed-create-page__clothes-grid-image">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.name || '옷'} />
+                        ) : (
+                          <div className="feed-create-page__clothes-placeholder">사진</div>
+                        )}
+                        {isSelected && (
+                          <div className="feed-create-page__clothes-grid-check">
+                            <IoCheckmark size={20} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 추가 로딩 */}
+            {isLoadingMoreClothes && (
+              <div className="feed-create-page__clothes-loading-more">
+                <Spinner size="small" />
+              </div>
+            )}
+          </div>
+
+          {/* 하단 버튼 */}
           <div className="feed-create-page__clothes-modal-footer">
-            <Button fullWidth onClick={() => setShowClothesModal(false)}>
-              선택 완료 ({selectedClothes.length})
+            <Button 
+              variant="outline"
+              onClick={handleClothesModalComplete}
+            >
+              완료
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleClothesModalCancel}
+            >
+              취소
             </Button>
           </div>
         </div>

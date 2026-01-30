@@ -303,6 +303,25 @@ export const getMyClothes = async (userId, category = null, after = null, limit 
   return apiRequest(`/users/${userId}/clothes?${params}`);
 };
 
+export const getClosetList = async (userId, category = null, cursor = null, limit = 20) => {
+  const params = new URLSearchParams();
+  
+  if (category) {
+    params.append('category', category);
+  }
+  if (cursor) {
+    params.append('after', cursor);
+  }
+  params.append('limit', limit.toString());
+
+  const queryString = params.toString();
+  const url = `/users/${userId}/clothes${queryString ? `?${queryString}` : ''}`;
+
+  return apiRequest(url, {
+    method: 'GET',
+  });
+};
+
 /**
  * 옷 상세 조회
  * @param {string|number} clothesId - 옷 ID
@@ -422,6 +441,15 @@ export const createClothes = async (clothesData) => {
   return apiRequest('/clothes', {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+};
+
+export const getClothesDetails = async (clothesIds) => {
+  const params = new URLSearchParams();
+  params.append('clothesIds', clothesIds.join(','));
+
+  return apiRequest(`/clothes/clothes-details?${params.toString()}`, {
+    method: 'GET',
   });
 };
 

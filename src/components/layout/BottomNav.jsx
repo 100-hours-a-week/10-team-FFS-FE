@@ -21,7 +21,7 @@ const BottomNav = () => {
       id: 'closet',
       icon: BsGrid3X3,
       label: '옷장',
-      path: '/closet',
+      path: `/closet/${getUserId()}`,
     },
     {
       id: 'feed',

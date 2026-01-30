@@ -229,6 +229,12 @@
   white-space: nowrap;
 }
 
+.feed-detail-page__clothes-price {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+
+}
+
 /* 시간 */
 .feed-detail-page__time {
   padding: var(--spacing-sm) var(--spacing-md);
