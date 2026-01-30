@@ -705,8 +705,14 @@ const FeedDetailPage = () => {
                       <div className="feed-detail-page__clothes-placeholder">사진</div>
                     )}
                   </div>
-                  <span className="feed-detail-page__clothes-name">{item.name}</span>
-                  <span className="feed-detail-page__clothes-price">{item.price.toLocaleString()}원</span>
+                  <span className="feed-detail-page__clothes-name">{item.name || '-'}</span>
+                  {item.price ? (
+                      <span className="feed-detail-page__clothes-price">
+                        {item.price.toLocaleString()}원
+                      </span>
+                    ):(
+                      <span className="feed-detail-page__clothes-price">-</span>
+                    )}
                 </div>
               ))}
             </div>
