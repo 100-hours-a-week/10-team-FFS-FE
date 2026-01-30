@@ -7,6 +7,13 @@
   background-color: var(--color-bg-primary);
 }
 
+.feed-create-page__loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .feed-create-page__content {
   flex: 1;
   padding: var(--spacing-md);
@@ -106,9 +113,11 @@
 /* 내용 입력 */
 .feed-create-page__textarea {
   width: 100%;
+  min-height: 120px;
   padding: var(--spacing-md);
   font-size: var(--font-size-md);
   font-family: inherit;
+  line-height: 1.5;
   color: var(--color-text-primary);
   background-color: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
@@ -122,10 +131,10 @@
 }
 
 .feed-create-page__textarea::placeholder {
-  color: var(--color-text-placeholder);
+  color: var(--color-text-tertiary);
 }
 
-/* 옷 태그 */
+/* 옷 태그 헤더 */
 .feed-create-page__clothes-header {
   display: flex;
   align-items: center;
@@ -138,36 +147,39 @@
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
   background: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: none;
   cursor: pointer;
 }
 
-.feed-create-page__clothes-add-btn:hover {
-  background-color: var(--color-bg-secondary);
-}
-
+/* 선택된 옷 목록 */
 .feed-create-page__clothes-list {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--spacing-sm);
+  overflow-x: auto;
+  padding: var(--spacing-sm) 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.feed-create-page__clothes-list::-webkit-scrollbar {
+  display: none;
 }
 
 .feed-create-page__clothes-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  background-color: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
+  gap: var(--spacing-xs);
+  position: relative;
+  flex-shrink: 0;
 }
 
 .feed-create-page__clothes-image {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background-color: var(--color-bg-tertiary);
 }
@@ -178,79 +190,161 @@
   object-fit: cover;
 }
 
+.feed-create-page__clothes-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.feed-create-page__clothes-name {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+  max-width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-create-page__clothes-price {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+}
+
+.feed-create-page__clothes-remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-text-tertiary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.feed-create-page__clothes-empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  padding: var(--spacing-md) 0;
+}
+
 .feed-create-page__clothes-placeholder {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
   color: var(--color-text-tertiary);
-}
-
-.feed-create-page__clothes-name {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.feed-create-page__clothes-remove {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  background: none;
-  border: none;
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-}
-
-.feed-create-page__clothes-remove:hover {
-  color: var(--color-error);
+  font-size: var(--font-size-xs);
+  background-color: var(--color-bg-tertiary);
 }
 
 /* 옷 선택 모달 */
 .feed-create-page__clothes-modal {
   display: flex;
   flex-direction: column;
-  max-height: 60vh;
+  height: 60vh;
+  max-height: 500px;
+}
+
+/* 카테고리 필터 */
+.feed-create-page__clothes-categories {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) 0;
+  overflow-x: auto;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.feed-create-page__clothes-categories::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-create-page__clothes-category {
+  flex-shrink: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.feed-create-page__clothes-category:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.feed-create-page__clothes-category--active {
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.feed-create-page__clothes-category--active:hover {
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* 옷 그리드 컨테이너 */
+.feed-create-page__clothes-grid-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm) 0;
 }
 
 .feed-create-page__clothes-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-sm);
-  overflow-y: auto;
-  padding-bottom: var(--spacing-md);
 }
 
 .feed-create-page__clothes-grid-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
   cursor: pointer;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: transform var(--transition-fast);
+}
+
+.feed-create-page__clothes-grid-item:active {
+  transform: scale(0.98);
 }
 
 .feed-create-page__clothes-grid-image {
   position: relative;
-  aspect-ratio: 1/1;
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  width: 100%;
+  padding-top: 100%;
   background-color: var(--color-bg-tertiary);
 }
 
 .feed-create-page__clothes-grid-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.feed-create-page__clothes-grid-item--selected .feed-create-page__clothes-grid-image {
+.feed-create-page__clothes-grid-item--selected .feed-create-page__clothes-grid-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(var(--color-primary-rgb), 0.3);
   border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
 }
 
 .feed-create-page__clothes-grid-check {
@@ -267,16 +361,38 @@
   border-radius: 50%;
 }
 
-.feed-create-page__clothes-grid-name {
-  font-size: 10px;
-  color: var(--color-text-secondary);
-  text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* 로딩 & 빈 상태 */
+.feed-create-page__clothes-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
 }
 
+.feed-create-page__clothes-loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+.feed-create-page__clothes-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* 모달 푸터 */
 .feed-create-page__clothes-modal-footer {
+  display: flex;
+  gap: var(--spacing-sm);
   padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border-light);
+  flex-shrink: 0;
+}
+
+.feed-create-page__clothes-modal-footer > * {
+  flex: 1;
 }

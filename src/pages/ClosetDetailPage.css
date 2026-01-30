@@ -76,31 +76,9 @@
   right: var(--spacing-md);
 }
 
-/* 이미지 인디케이터 */
-.closet-detail-page__image-indicators {
-  position: absolute;
-  bottom: var(--spacing-md);
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: var(--spacing-xs);
-}
-
-.closet-detail-page__image-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.5);
-  transition: background-color var(--transition-fast);
-}
-
-.closet-detail-page__image-indicator--active {
-  background-color: var(--color-text-inverse);
-}
-
 /* 옷 정보 */
 .closet-detail-page__info {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -109,16 +87,20 @@
 .closet-detail-page__field {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
 }
 
 .closet-detail-page__label {
+  padding: 0px var(--spacing-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
 }
 
 .closet-detail-page__value {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-md);
   color: var(--color-text-primary);
 }

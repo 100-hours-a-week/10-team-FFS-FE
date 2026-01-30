@@ -1,150 +1,169 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Spinner } from '../components/common';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { mockUsers, mockFeeds } from '../mocks/data';
-import { formatNumber } from '../utils/helpers';
-import { IoHeart, IoChatbubbleOutline } from 'react-icons/io5';
+import { getUserProfile, getUserFeeds } from '../api';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
+import FeedList from './FeedList';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-  const { userId } = useParams();
   const navigate = useNavigate();
+  const { userId } = useParams();
+  const { user: currentUser } = useAuth();
   const { error: showError } = useToast();
 
-  const [user, setUser] = useState(null);
-  const [feeds, setFeeds] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
-  // 데이터 로드
+  // 프로필 조회
   useEffect(() => {
     const loadProfile = async () => {
-      setIsLoading(true);
+      setIsProfileLoading(true);
       try {
-        // API 연동 필요: 사용자 프로필 조회
-        // const profileData = await getUserProfile(userId);
-        // const feedsData = await getUserFeeds(userId);
-        
-        // 목업 데이터 사용
-        const userData = mockUsers.find(u => u.id === userId);
-        const userFeeds = mockFeeds.filter(f => f.author.id === userId);
-        
-        if (userData) {
-          setUser(userData);
-          setFeeds(userFeeds);
-        }
+        const profileResponse = await getUserProfile(userId);
+        const profileData = profileResponse.data;
+
+        setProfile({
+          id: profileData.userProfile.userId,
+          profileImage: profileData.userProfile.userProfileImageUrl,
+          nickname: profileData.userProfile.nickname,
+          isMe: profileData.isMe,
+          followerCount: profileData.followerCount || 0,
+          followingCount: profileData.followingCount || 0,
+        });
       } catch (err) {
-        showError('프로필을 불러오는데 실패했습니다.');
+        console.error('Failed to load profile:', err);
+        if (err.message === 'target_user_not_found' || err.message === 'user_not_found') {
+          showError('사용자를 찾을 수 없습니다.');
+          navigate(-1);
+        } else {
+          showError('프로필을 불러오는데 실패했습니다.');
+        }
       } finally {
-        setIsLoading(false);
+        setIsProfileLoading(false);
       }
     };
 
-    loadProfile();
-  }, [userId, showError]);
+    if (userId) loadProfile();
+  }, [userId, navigate, showError]);
 
-  // 피드 상세로 이동
-  const handleFeedClick = (feedId) => {
-    navigate(`/feed/${feedId}`);
-  };
+  // 프로필 피드 무한 스크롤 fetch 함수
+  const fetchUserFeeds = useCallback(async (cursor) => {
+    const response = await getUserFeeds(userId, cursor, 12);
+    const { items, pageInfo } = response.data;
 
-  // 옷장 보기
-  const handleClosetClick = () => {
-    navigate(`/profile/${userId}/closet`);
-  };
+    return {
+      data: items.map((item) => ({
+        id: item.feedId,
+        primaryImageUrl: item.primaryImageUrl,
+        likeCount: item.likeCount,
+        commentCount: item.commentCount,
+        author: {
+          id: item.userProfile.userId,
+          profileImage: item.userProfile.userProfileImageUrl,
+          nickname: item.userProfile.nickname,
+        },
+        isLiked: item.isLiked,
+      })),
+      nextCursor: pageInfo.hasNextPage ? pageInfo.nextCursor : null,
+      hasMore: pageInfo.hasNextPage,
+    };
+  }, [userId]);
 
-  if (isLoading) {
+  const {
+    data: feeds,
+    isLoading: isFeedsLoading,
+    lastElementRef,
+    reset,
+    loadMore,
+  } = useInfiniteScroll(fetchUserFeeds, { threshold: 300, initialLoad: false });
+
+  useEffect(() => {
+    if (!userId) return;
+    reset();
+    setTimeout(() => loadMore(), 0);
+  }, [userId, reset]);
+
+  // 설정 페이지로 이동
+  const handleSettingsClick = () => navigate('/mypage/edit');
+
+  // 남의 옷장으로 이동
+  const handleClosetClick = () => navigate(`/closet/${userId}`);
+
+  if (isProfileLoading) {
     return (
-      <div className="profile-page">
+      <div className="my-page">
         <Header showBack title="프로필" />
-        <div className="profile-page__loading">
+        <div className="my-page__loading">
           <Spinner size="large" />
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return (
-      <div className="profile-page">
-        <Header showBack title="프로필" />
-        <div className="profile-page__empty">
-          <p>사용자를 찾을 수 없습니다</p>
-        </div>
-      </div>
-    );
-  }
+  if (!profile) return null;
 
   return (
-    <div className="profile-page">
-      <Header showBack title={user.nickname} />
+    <div className="my-page">
+      <Header
+        showBack={!profile.isMe}
+        title={profile.isMe ? '마이페이지' : '프로필'}
+        rightAction={profile.isMe ? handleSettingsClick : undefined}
+        rightIcon={profile.isMe ? <span /> : undefined}
+      />
 
-      <div className="profile-page__content">
+      <div className="my-page__content">
         {/* 프로필 정보 */}
-        <div className="profile-page__header">
-          <div className="profile-page__avatar">
-            {user.profileImage ? (
-              <img src={user.profileImage} alt={user.nickname} />
+        <div className="my-page__profile">
+          <div className="my-page__avatar">
+            {profile.profileImage ? (
+              <img src={profile.profileImage} alt={profile.nickname} />
             ) : (
-              <div className="profile-page__avatar-placeholder" />
+              <div className="my-page__avatar-placeholder" />
             )}
           </div>
-          
-          <div className="profile-page__info">
-            <h2 className="profile-page__nickname">{user.nickname}</h2>
-            <div className="profile-page__stats">
+
+          <div className="my-page__info">
+            <h2 className="my-page__nickname">{profile.nickname}</h2>
+            <div className="my-page__stats">
               <span>피드 {feeds.length}</span>
             </div>
           </div>
         </div>
 
-        {/* 옷장 버튼 */}
-        <button className="profile-page__closet-btn" onClick={handleClosetClick}>
-          {user.nickname} 님의 옷장 보기
-        </button>
+        {/* 버튼 영역 */}
+          <div className="my-page__buttons">
+            {profile.isMe &&(
+              <button className="my-page__btn" onClick={() => navigate('/mypage/edit')}>
+                계정 관리
+              </button>
+            )}
+            <button className="my-page__btn" onClick={handleClosetClick}>
+              옷장 구경하러 가기
+            </button>
+          </div>
 
-        {/* 피드 그리드 */}
-        <div className="profile-page__feeds">
-          <h3 className="profile-page__feeds-title">피드</h3>
-          
-          {feeds.length === 0 ? (
-            <div className="profile-page__feeds-empty">
+        {/* ✅ FeedList로 통일 + 무한 스크롤 */}
+        <div className="my-page__feeds">
+          {feeds.length === 0 && !isFeedsLoading ? (
+            <div className="my-page__feeds-empty">
               <p>아직 작성한 피드가 없습니다</p>
+              {profile.isMe && (
+                <button onClick={() => navigate('/feed/create')}>
+                  첫 피드 작성하기
+                </button>
+              )}
             </div>
           ) : (
-            <div className="profile-page__feeds-grid">
-              {feeds.map((feed) => (
-                <div
-                  key={feed.id}
-                  className="profile-page__feed-card"
-                  onClick={() => handleFeedClick(feed.id)}
-                >
-                  <div className="profile-page__feed-image">
-                    {feed.images[0] ? (
-                      <img src={feed.images[0]} alt="피드 이미지" />
-                    ) : (
-                      <div className="profile-page__feed-placeholder">사진</div>
-                    )}
-                    {feed.images.length > 1 && (
-                      <span className="profile-page__feed-count">
-                        +{feed.images.length - 1}
-                      </span>
-                    )}
-                  </div>
-                  <div className="profile-page__feed-stats">
-                    <span>
-                      <IoHeart size={12} />
-                      {formatNumber(feed.likeCount)}
-                    </span>
-                    <span>
-                      <IoChatbubbleOutline size={12} />
-                      {formatNumber(feed.commentCount)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <FeedList
+              feeds={feeds}
+              isLoading={isFeedsLoading}
+              lastElementRef={lastElementRef}
+              onFeedClick={(feedId) => navigate(`/feed/${feedId}`)}
+            />
           )}
         </div>
       </div>

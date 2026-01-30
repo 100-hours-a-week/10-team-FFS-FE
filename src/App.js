@@ -5,10 +5,13 @@ import { ToastProvider } from './contexts/ToastContext';
 import { AppLayout } from './components/layout';
 import {
   LoginPage,
+  KakaoCallbackPage,
   AdditionalInfoPage,
   ClosetListPage,
   ClosetDetailPage,
   ClosetUploadPage,
+  ClothesUploadPage,
+  ClothesEditPage,
   AICoordPage,
   FeedListPage,
   FeedDetailPage,
@@ -16,7 +19,6 @@ import {
   ProfilePage,
   OtherClosetListPage,
   OtherClosetDetailPage,
-  MyPage,
   MyPageEdit,
 } from './pages';
 import { FullPageLoading } from './components/common';
@@ -72,6 +74,8 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+      {/* 카카오 OAuth 콜백 */}
+      <Route path="/oauth/kakao/callback" element={<KakaoCallbackPage />} />
 
       {/* 보호된 라우트 - 레이아웃 포함 */}
       <Route
@@ -82,12 +86,13 @@ function AppRoutes() {
         }
       >
         {/* 기본 경로 리다이렉트 */}
-        <Route index element={<Navigate to="/closet" replace />} />
+        <Route index element={<Navigate to="/feed" replace />} />
         
         {/* 옷장 */}
-        <Route path="/closet" element={<ClosetListPage />} />
-        <Route path="/closet/upload" element={<ClosetUploadPage />} />
-        <Route path="/closet/:clothesId" element={<ClosetDetailPage />} />
+        <Route path="/closet/:userId" element={<ClosetListPage />} />
+        <Route path="/closet/upload" element={<ClothesUploadPage />} />
+        <Route path="/clothes/:clothesId" element={<ClosetDetailPage />} />
+        <Route path="/clothes/:clothesId/edit" element={<ClothesEditPage />} />
 
         {/* AI 코디 */}
         <Route path="/ai-coordi" element={<AICoordPage />} />
@@ -96,19 +101,21 @@ function AppRoutes() {
         <Route path="/feed" element={<FeedListPage />} />
         <Route path="/feed/create" element={<FeedCreatePage />} />
         <Route path="/feed/:feedId" element={<FeedDetailPage />} />
+        <Route path="/feed/:feedId/edit" element={<FeedCreatePage />} />
 
-        {/* 타인 프로필 */}
+        {/* 프로필 */}
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/profile/:userId/closet" element={<OtherClosetListPage />} />
         <Route path="/profile/:userId/closet/:clothesId" element={<OtherClosetDetailPage />} />
 
-        {/* 마이페이지 */}
-        <Route path="/mypage" element={<MyPage />} />
+        {/* 프로필 편집 */}
         <Route path="/mypage/edit" element={<MyPageEdit />} />
+
+        <Route path="/test" element={<ClosetUploadPage />} />
       </Route>
 
       {/* 404 - 존재하지 않는 경로 */}
-      <Route path="*" element={<Navigate to="/closet" replace />} />
+      <Route path="*" element={<Navigate to="/feed" replace />} />
     </Routes>
   );
 }

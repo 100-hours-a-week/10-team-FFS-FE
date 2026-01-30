@@ -1,36 +1,26 @@
-/* Profile Page Styles */
+/* My Page Styles */
 
-.profile-page {
+.my-page {
   display: flex;
   flex-direction: column;
   min-height: 100%;
   background-color: var(--color-bg-primary);
 }
 
-.profile-page__content {
+.my-page__content {
   flex: 1;
   padding: var(--spacing-md);
 }
 
-.profile-page__loading,
-.profile-page__empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  color: var(--color-text-tertiary);
-}
-
-/* 프로필 헤더 */
-.profile-page__header {
+/* 프로필 정보 */
+.my-page__profile {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
 }
 
-.profile-page__avatar {
+.my-page__avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
@@ -39,91 +29,107 @@
   flex-shrink: 0;
 }
 
-.profile-page__avatar img {
+.my-page__avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.profile-page__avatar-placeholder {
+.my-page__avatar-placeholder {
   width: 100%;
   height: 100%;
 }
 
-.profile-page__info {
+.my-page__info {
   flex: 1;
 }
 
-.profile-page__nickname {
+.my-page__nickname {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   margin-bottom: var(--spacing-xs);
 }
 
-.profile-page__stats {
+.my-page__stats {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
 
-/* 옷장 버튼 */
-.profile-page__closet-btn {
-  width: 100%;
-  padding: var(--spacing-md);
-  font-size: var(--font-size-md);
+/* 버튼 영역 */
+.my-page__buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.my-page__btn {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
   background-color: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  margin-bottom: var(--spacing-lg);
   transition: all var(--transition-fast);
 }
 
-.profile-page__closet-btn:hover {
+.my-page__btn:hover {
   background-color: var(--color-bg-tertiary);
 }
 
 /* 피드 섹션 */
-.profile-page__feeds {
+.my-page__feeds {
   margin-top: var(--spacing-md);
 }
 
-.profile-page__feeds-title {
+.my-page__feeds-title {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   margin-bottom: var(--spacing-md);
 }
 
-.profile-page__feeds-empty {
+.my-page__feeds-empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 150px;
+  height: 200px;
+  gap: var(--spacing-md);
   color: var(--color-text-tertiary);
-  font-size: var(--font-size-sm);
 }
 
-.profile-page__feeds-grid {
+.my-page__feeds-empty button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.my-page__feeds-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-xs);
 }
 
-.profile-page__feed-card {
+.my-page__feed-card {
   cursor: pointer;
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
-.profile-page__feed-image {
+.my-page__feed-image {
   position: relative;
   width: 100%;
   padding-top: 100%;
   background-color: var(--color-bg-tertiary);
 }
 
-.profile-page__feed-image img {
+.my-page__feed-image img {
   position: absolute;
   top: 0;
   left: 0;
@@ -132,7 +138,7 @@
   object-fit: cover;
 }
 
-.profile-page__feed-placeholder {
+.my-page__feed-placeholder {
   position: absolute;
   top: 0;
   left: 0;
@@ -145,7 +151,7 @@
   font-size: var(--font-size-xs);
 }
 
-.profile-page__feed-count {
+.my-page__feed-count {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -156,7 +162,7 @@
   border-radius: var(--radius-sm);
 }
 
-.profile-page__feed-stats {
+.my-page__feed-stats {
   display: flex;
   gap: var(--spacing-sm);
   padding: var(--spacing-xs);
@@ -164,7 +170,7 @@
   color: var(--color-text-secondary);
 }
 
-.profile-page__feed-stats span {
+.my-page__feed-stats span {
   display: flex;
   align-items: center;
   gap: 2px;
