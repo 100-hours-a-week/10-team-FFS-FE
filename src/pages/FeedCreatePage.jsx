@@ -512,11 +512,13 @@ const FeedCreatePage = () => {
                     )}
                   </div>
                   <div className="feed-create-page__clothes-info">
-                    <span className="feed-create-page__clothes-name">{item.name || '옷'}</span>
-                    {item.price && (
+                    <span className="feed-create-page__clothes-name">{item.name || '-'}</span>
+                    {item.price ? (
                       <span className="feed-create-page__clothes-price">
                         {item.price.toLocaleString()}원
                       </span>
+                    ):(
+                      <span className="feed-create-page__clothes-price">-</span>
                     )}
                   </div>
                   <button 

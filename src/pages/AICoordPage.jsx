@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Spinner, Button } from '../components/common';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 import { createOutfitRecommendation, getOutfitHistories, updateOutfitReaction, getMyClothesCount } from '../api';
 import { downloadImage } from '../utils/helpers';
 import {
@@ -21,13 +22,14 @@ import './AICoordPage.css';
 
 // 추천 문장 (고정)
 const SUGGESTED_QUERIES = [
-  '내일 결혼식장 갈건데 무슨 옷 입을까?',
-  '지금 비온다',
-  '어쩌고 저쩌고 이러쿵저러쿵'
+  '내일 결혼식장 갈 건데 무슨 옷 입을까?',
+  '다음 주에 소개팅 갈 때 입을 옷 추천해 줘',
+  '비온다... 뭐 입지?'
 ];
 
 const AICoordPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { success, error: showError } = useToast();
 
   // 진입 화면 상태
@@ -52,7 +54,6 @@ const AICoordPage = () => {
         const count = response.data?.count ?? 0;
         setHasClothes(count > 0);
       } catch (err) {
-        // 에러 시 옷이 있다고 가정 (API 실패 시 메인 기능은 동작하도록)
         setHasClothes(true);
       } finally {
         setIsCheckingClothes(false);
@@ -108,7 +109,6 @@ const AICoordPage = () => {
     try {
       const response = await createOutfitRecommendation(trimmedQuery);
       const data = response.data;
-
       setResult({
         summary: data.outfitSummary,
         outfits: data.outfits || []
@@ -130,7 +130,7 @@ const AICoordPage = () => {
 
   // 옷장 이동
   const handleGoToCloset = () => {
-    navigate('/closet');
+    navigate(`/closet/${user?.id}`);
   };
 
   // 캐러셀 네비게이션
@@ -146,21 +146,6 @@ const AICoordPage = () => {
     }
   };
 
-  // 이미지 다운로드
-  const handleDownload = async () => {
-    if (!result || !result.outfits[currentIndex]) {
-      return;
-    }
-
-    const outfit = result.outfits[currentIndex];
-    try {
-      await downloadImage(outfit.outfitImageUrl, `coordination_${outfit.outfitId}.png`);
-      success('이미지가 저장되었어요!');
-    } catch (err) {
-      showError('저장에 실패했어요. 다시 시도해주세요.');
-    }
-  };
-
   // 좋아요/싫어요 반응
   const handleReaction = async (type) => {
     if (!result || !result.outfits[currentIndex]) {
@@ -171,7 +156,6 @@ const AICoordPage = () => {
     const outfitId = outfit.outfitId;
     const currentReaction = reactions[outfitId] || 'NONE';
 
-    // 토글 로직: 같은 버튼 다시 누르면 NONE으로
     let newReaction;
     if (currentReaction === type) {
       newReaction = 'NONE';
@@ -179,7 +163,6 @@ const AICoordPage = () => {
       newReaction = type;
     }
 
-    // 낙관적 업데이트
     setReactions(prev => ({
       ...prev,
       [outfitId]: newReaction
@@ -188,7 +171,6 @@ const AICoordPage = () => {
     try {
       await updateOutfitReaction(outfitId, newReaction);
     } catch (err) {
-      // 실패 시 롤백
       setReactions(prev => ({
         ...prev,
         [outfitId]: currentReaction
@@ -196,19 +178,9 @@ const AICoordPage = () => {
     }
   };
 
-  // 게시물에 올릴래요
-  const handleShareToFeed = () => {
-    if (!result || !result.outfits[currentIndex]) {
-      return;
-    }
-
-    const outfit = result.outfits[currentIndex];
-    navigate('/feed/create', {
-      state: {
-        presetImage: outfit.outfitImageUrl,
-        fromCoordination: true
-      }
-    });
+  // 옷 상세 페이지로 이동
+  const handleClothesClick = (clothesId) => {
+    navigate(`/clothes/${clothesId}`);
   };
 
   // 현재 코디 다시 추천받기
@@ -313,17 +285,11 @@ const AICoordPage = () => {
           <div className="ai-coord-page__summary">
             <p>{result.summary}</p>
           </div>
+          
 
           {/* 코디 카드 */}
           <div className="ai-coord-page__card">
-            {/* 다운로드 버튼 */}
-            <button
-              className="ai-coord-page__download-btn"
-              onClick={handleDownload}
-              aria-label="이미지 저장"
-            >
-              <IoDownloadOutline size={24} />
-            </button>
+
 
             {/* 캐러셀 */}
             <div className="ai-coord-page__carousel">
@@ -337,19 +303,20 @@ const AICoordPage = () => {
                 <IoChevronBack size={24} />
               </button>
 
-              {/* 이미지 */}
+              {/* 이미지 영역 */}
               <div className="ai-coord-page__image-container">
-                {currentOutfit.outfitImageUrl ? (
-                  <img
-                    src={currentOutfit.outfitImageUrl}
-                    alt={`코디 ${currentIndex + 1}`}
-                    className="ai-coord-page__image"
-                  />
-                ) : (
-                  <div className="ai-coord-page__image-placeholder">
-                    AI 코디 추천<br />결과 사진
+                  <div className="ai-coord-page__clothes-grid">
+                    {currentOutfit.clothes.map((item) => (
+                      <div
+                        key={item.clothesId}
+                        className="ai-coord-page__clothes-item"
+                        onClick={() => handleClothesClick(item.clothesId)}
+                      >
+                        <img src={item.imageUrl} alt={item.name} />
+                        <span className="ai-coord-page__clothes-name">{item.name}</span>
+                      </div>
+                    ))}
                   </div>
-                )}
               </div>
 
               {/* 다음 버튼 */}
@@ -362,18 +329,6 @@ const AICoordPage = () => {
                 <IoChevronForward size={24} />
               </button>
             </div>
-
-            {/* 인디케이터 */}
-            {result.outfits.length > 1 && (
-              <div className="ai-coord-page__indicators">
-                {result.outfits.map((_, index) => (
-                  <span
-                    key={index}
-                    className={`ai-coord-page__indicator ${index === currentIndex ? 'ai-coord-page__indicator--active' : ''}`}
-                  />
-                ))}
-              </div>
-            )}
 
             {/* AI 코멘트 */}
             <div className="ai-coord-page__comment">
@@ -398,14 +353,19 @@ const AICoordPage = () => {
                   {currentReaction === 'BAD' ? <IoThumbsDown size={24} /> : <IoThumbsDownOutline size={24} />}
                 </button>
               </div>
-              <button
-                className="ai-coord-page__share-btn"
-                onClick={handleShareToFeed}
-              >
-                <IoAddCircleOutline size={20} />
-                게시물에 올릴래요
-              </button>
             </div>
+
+            {/* 인디케이터 */}
+            {result.outfits.length > 1 && (
+              <div className="ai-coord-page__indicators">
+                {result.outfits.map((_, index) => (
+                  <span
+                    key={index}
+                    className={`ai-coord-page__indicator ${index === currentIndex ? 'ai-coord-page__indicator--active' : ''}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 하단 버튼 영역 */}

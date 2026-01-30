@@ -232,6 +232,10 @@
 .feed-detail-page__clothes-price {
   font-size: 10px;
   color: var(--color-text-tertiary);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
 }
 
