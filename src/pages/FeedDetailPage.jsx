@@ -83,7 +83,7 @@ const FeedDetailPage = () => {
           clothes: data.clothes?.map(c => ({
             id: c.id,
             imageUrl: c.imageUrl,
-            productName: c.name,
+            name: c.name,
             price: c.price,
           })) || [],
           author: {
@@ -697,15 +697,16 @@ const FeedDetailPage = () => {
             <h3 className="feed-detail-page__clothes-title">착용 아이템</h3>
             <div className="feed-detail-page__clothes-list">
               {feed.clothes.map((item) => (
-                <div key={item.id} className="feed-detail-page__clothes-item">
+                <div key={item.id} className="feed-detail-page__clothes-item" onClick={() => navigate(`/clothes/${item.id}`)}>
                   <div className="feed-detail-page__clothes-image">
                     {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.productName} />
+                      <img src={item.imageUrl} alt={item.name} />
                     ) : (
                       <div className="feed-detail-page__clothes-placeholder">사진</div>
                     )}
                   </div>
-                  <span className="feed-detail-page__clothes-name">{item.productName}</span>
+                  <span className="feed-detail-page__clothes-name">{item.name}</span>
+                  <span className="feed-detail-page__clothes-price">{item.price.toLocaleString()}원</span>
                 </div>
               ))}
             </div>

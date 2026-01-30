@@ -444,6 +444,15 @@ export const createClothes = async (clothesData) => {
   });
 };
 
+export const getClothesDetails = async (clothesIds) => {
+  const params = new URLSearchParams();
+  params.append('clothesIds', clothesIds.join(','));
+
+  return apiRequest(`/clothes/clothes-details?${params.toString()}`, {
+    method: 'GET',
+  });
+};
+
 
 /* ==============================================
    타인 옷장 관련 API
