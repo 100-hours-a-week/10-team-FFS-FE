@@ -40,9 +40,9 @@ jobs:
       - name: Build project
         id: build
         env:
-          REACT_APP_BASE_URL: ${{ secrets.REACT_APP_BASE_URL }}
+          REACT_APP_BASE_URL_DEV: ${{ secrets.REACT_APP_BASE_URL_DEV }}
           REACT_APP_KAKAO_CLIENT_ID: ${{ secrets.REACT_APP_KAKAO_CLIENT_ID }}
-          REACT_APP_KAKAO_REDIRECT_URI: ${{ secrets.REACT_APP_KAKAO_REDIRECT_URI }}
+          REACT_APP_KAKAO_REDIRECT_URI_DEV: ${{ secrets.REACT_APP_KAKAO_REDIRECT_URI_DEV }}
         run: CI=false npm run build
 
       - name: Run tests
