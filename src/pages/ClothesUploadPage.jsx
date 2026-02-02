@@ -461,12 +461,13 @@ const ClothesUploadPage = () => {
                 <div className="clothes-upload-page__slide">
                   {/* 이미지 영역 */}
                   <div className="clothes-upload-page__image-container">
-                    {currentResult?.status === 'PREPROCESSING' && (
+                    {currentResult?.status === ('PREPROCESSING' || 'ANALYZING') && (
                       <div className="clothes-upload-page__image-loading">
                         <Spinner />
                         <span>이미지 처리 중...</span>
                       </div>
                     )}
+                    {/*
                     {currentResult?.status === 'ANALYZING' && (
                       <>
                         <img 
@@ -480,6 +481,8 @@ const ClothesUploadPage = () => {
                         </div>
                       </>
                     )}
+                    */}
+                    
                     {currentResult?.status === 'COMPLETED' && (
                       <img 
                         src={currentResult.imageUrl} 
