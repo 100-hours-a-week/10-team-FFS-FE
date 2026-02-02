@@ -18,12 +18,14 @@ const LoginPage = () => {
       <div className="login-page__content">
         {/* 로고 영역 */}
         <div className="login-page__logo-area">
+          {/* 
           <div className="login-page__logo">
             <div className="login-page__logo-circle" />
           </div>
+          */}
           <h1 className="login-page__title">KlosetLab</h1>
         </div>
-
+        
         {/* 로그인 버튼 영역 */}
         <div className="login-page__button-area">
           <button 

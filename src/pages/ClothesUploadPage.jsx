@@ -461,7 +461,7 @@ const ClothesUploadPage = () => {
                 <div className="clothes-upload-page__slide">
                   {/* 이미지 영역 */}
                   <div className="clothes-upload-page__image-container">
-                    {currentResult?.status === ('PREPROCESSING' || 'ANALYZING') && (
+                    {(currentResult?.status === 'PREPROCESSING' || currentResult?.status === 'ANALYZING') && (
                       <div className="clothes-upload-page__image-loading">
                         <Spinner />
                         <span>이미지 처리 중...</span>
@@ -728,18 +728,19 @@ const ClothesUploadPage = () => {
               )}
 
               {/* ANALYZING 상태일 때 메시지 */}
-              {currentResult?.status === 'ANALYZING' && (
+              {(currentResult?.status === 'PREPROCESSING' || currentResult?.status === 'ANALYZING') && (
                 <div className="clothes-upload-page__analyzing-message">
                   <p>AI가 옷을 분석하고 있습니다. 잠시만 기다려주세요.</p>
                 </div>
               )}
 
-              {/* PREPROCESSING 상태일 때 메시지 */}
+              {/* PREPROCESSING 상태일 때 메시지 
               {currentResult?.status === 'PREPROCESSING' && (
                 <div className="clothes-upload-page__analyzing-message">
                   <p>이미지를 처리하고 있습니다. 잠시만 기다려주세요.</p>
                 </div>
               )}
+              */}
             </>
           )}
         </div>
