@@ -11,6 +11,7 @@ import './MyPageEdit.css';
  * V1 계정 관리 페이지
  * - 로그아웃
  * - 회원탈퇴
+ * - 서비스 피드백 남기기
  */
 const MyPageEdit = () => {
   const navigate = useNavigate();
@@ -49,6 +50,14 @@ const MyPageEdit = () => {
 
       <div className="mypage-edit__content">
         <div className="mypage-edit__account">
+          <a
+            href="https://forms.gle/tPzq11k13oncrwwMA"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mypage-edit__account-btn"
+          >
+            서비스 피드백 보내기
+          </a>
           <button
             className="mypage-edit__account-btn"
             onClick={() => setShowLogoutModal(true)}
