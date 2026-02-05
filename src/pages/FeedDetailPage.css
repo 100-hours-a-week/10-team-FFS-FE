@@ -473,3 +473,15 @@
   color: var(--text-secondary, #65676b);
   font-size: 14px;
 }
+
+/* 댓글 무한 스크롤 트리거 영역 */
+.feed-detail-page__comments-end {
+  min-height: 1px;
+}
+
+.feed-detail-page__comments-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+}

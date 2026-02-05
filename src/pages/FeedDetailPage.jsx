@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Button, Spinner, AlertModal, ActionSheet, Modal } from '../components/common';
+import { Button, Spinner, AlertModal, ActionSheet, Modal, ScrollToTopButton } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { 
@@ -31,6 +31,8 @@ const FeedDetailPage = () => {
   const { user } = useAuth();
   const { success, error: showError } = useToast();
   const commentInputRef = useRef(null);
+  const commentsObserverRef = useRef(null);
+  const isLoadingCommentsRef = useRef(false);
 
   const [feed, setFeed] = useState(null);
   const [comments, setComments] = useState([]);
@@ -537,12 +539,41 @@ const FeedDetailPage = () => {
     }
   };
 
-  const handleLoadMoreComments = async () => {
-    if (isLoadingMoreComments || !hasMoreComments) return;
+  const handleLoadMoreComments = useCallback(async () => {
+    if (isLoadingCommentsRef.current || !hasMoreComments) return;
+    isLoadingCommentsRef.current = true;
     setIsLoadingMoreComments(true);
     await loadComments(commentsCursor);
     setIsLoadingMoreComments(false);
-  };
+    isLoadingCommentsRef.current = false;
+  }, [hasMoreComments, commentsCursor, loadComments]);
+
+  // 댓글 무한 스크롤 콜백 ref (useInfiniteScroll 패턴과 동일)
+  const commentsLastElementRef = useCallback((node) => {
+    if (!('IntersectionObserver' in window)) {
+      return;
+    }
+    if (isLoadingCommentsRef.current) {
+      return;
+    }
+
+    if (commentsObserverRef.current) {
+      commentsObserverRef.current.disconnect();
+    }
+
+    commentsObserverRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMoreComments) {
+          handleLoadMoreComments();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    if (node) {
+      commentsObserverRef.current.observe(node);
+    }
+  }, [hasMoreComments, handleLoadMoreComments]);
 
   const getRemainingRepliesCount = (comment) => {
     if (!comment.repliesLoaded) {
@@ -561,7 +592,7 @@ const FeedDetailPage = () => {
   // 입력창 버튼 텍스트
   const getSubmitButtonText = () => {
     if (editingComment) return '수정';
-    return '게시';
+    return '등록';
   };
 
   const feedActions = feed?.isOwner ? [
@@ -733,8 +764,12 @@ const FeedDetailPage = () => {
           ) : (
             <>
               <h3 className="feed-detail-page__comments-title">댓글</h3>
-              {comments.map(comment => (
-                <div key={comment.id} className="feed-detail-page__comment">
+              {comments.map((comment, index) => (
+                <div
+                  key={comment.id}
+                  ref={index === comments.length - 1 ? commentsLastElementRef : null}
+                  className="feed-detail-page__comment"
+                >
                   <div className="feed-detail-page__comment-main">
                     <div 
                       className="feed-detail-page__comment-avatar"
@@ -865,19 +900,19 @@ const FeedDetailPage = () => {
                 </div>
               ))}
 
-              {hasMoreComments && (
-                <button 
-                  className="feed-detail-page__load-more"
-                  onClick={handleLoadMoreComments}
-                  disabled={isLoadingMoreComments}
-                >
-                  {isLoadingMoreComments ? '로딩 중...' : '댓글 더보기'}
-                </button>
+              {/* 댓글 로딩 인디케이터 */}
+              {isLoadingMoreComments && (
+                <div className="feed-detail-page__comments-loading">
+                  <Spinner size="small" />
+                </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      {/* 스크롤 투 탑 버튼 */}
+      <ScrollToTopButton className="scroll-to-top-button--feed-detail" />
 
       {/* 댓글 입력 */}
       <div className="feed-detail-page__comment-input">

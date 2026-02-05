@@ -1,0 +1,41 @@
+/* ScrollToTopButton Styles */
+
+.scroll-to-top-button {
+  position: fixed;
+  right: var(--spacing-md);
+  bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  z-index: var(--z-fixed);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.scroll-to-top-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.scroll-to-top-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 모바일 중앙 정렬 레이아웃 대응 */
+@media (min-width: 430px) {
+  .scroll-to-top-button {
+    right: calc(50% - var(--max-width-app) / 2 + var(--spacing-md));
+  }
+}
+
+/* FeedDetailPage 전용 위치 조정 */
+.scroll-to-top-button--feed-detail {
+  bottom: calc(var(--bottom-nav-height) + 60px + var(--spacing-md)); /* 댓글 입력창 높이 고려 */
+}
