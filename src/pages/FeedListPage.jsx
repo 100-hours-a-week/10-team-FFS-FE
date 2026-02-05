@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
+import { ScrollToTopButton } from '../components/common';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import { getFeeds } from '../api';
 import FeedList from './FeedList';
@@ -51,6 +52,8 @@ const FeedListPage = () => {
           />
         )}
       </div>
+
+      <ScrollToTopButton />
     </div>
   );
 };
