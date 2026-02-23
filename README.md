@@ -122,3 +122,4 @@ export const kakaoLogin = async (authCode) => {
 - React Router v6
 - react-icons
 - CSS (프레임워크 없음)
+
