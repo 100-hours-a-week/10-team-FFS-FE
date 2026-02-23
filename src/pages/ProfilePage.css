@@ -77,6 +77,19 @@
 
 .my-page__btn:hover {
   background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.--following {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-primary);
+}
+
+.--following:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary-light);
+  color: var(--color-text-inverse);
 }
 
 /* 피드 섹션 */
@@ -174,4 +187,139 @@
   display: flex;
   align-items: center;
   gap: 2px;
+}
+
+/* 팔로우/팔로잉 버튼 */
+.my-page__btn--follow {
+  background-color: #3897f0;
+  color: #fff;
+  border: none;
+}
+
+.my-page__btn--following {
+  background-color: #efefef;
+  color: #262626;
+  border: 1px solid #dbdbdb;
+}
+
+/* 팔로우 목록 모달 */
+.follow-modal__list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.follow-modal__loading,
+.follow-modal__empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  color: #999;
+  font-size: 14px;
+}
+
+.follow-modal__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.follow-modal__user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.follow-modal__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.follow-modal__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.follow-modal__avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #e0e0e0;
+  border-radius: 50%;
+}
+
+.follow-modal__nickname {
+  font-size: 14px;
+  font-weight: 500;
+  color: #262626;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.follow-modal__load-more {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: none;
+  color: #3897f0;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.follow-modal__load-more:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* 팔로잉/팔로워 클릭 커서 */
+.my-page__stats span[style*="cursor"] {
+  text-decoration: none;
+}
+
+.my-page__stats span[style*="cursor"]:hover {
+  opacity: 0.7;
+}
+
+/* 정렬 탭 바 */
+.follow-modal__tabs {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.follow-modal__tab {
+  flex: 1;
+  padding: 0 0 10px 0;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #999;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.follow-modal__tab--active {
+  color: #262626;
+  font-weight: 600;
+}
+
+.follow-modal__tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background-color: #262626;
 }

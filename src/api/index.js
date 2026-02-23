@@ -4,6 +4,7 @@
    ============================================== */
 
 const BASE_URL = process.env.REACT_APP_BASE_URL_DEV || 'http://localhost:8080/api/v1';
+const BASE_URL_V2 = BASE_URL.replace('/v1', '/v2');
 
 // 토큰 관리
 const getAccessToken = () => localStorage.getItem('accessToken');
@@ -17,8 +18,8 @@ const removeUserId = () => localStorage.removeItem('userId');
 
 
 // API 요청 헬퍼 함수
-const apiRequest = async (endpoint, options = {}) => {
-  const url = `${BASE_URL}${endpoint}`;
+const apiRequest = async (endpoint, options = {}, baseUrl = BASE_URL) => {
+  const url = `${baseUrl}${endpoint}`;
   const accessToken = getAccessToken();
 
   const defaultHeaders = {
@@ -529,6 +530,20 @@ export const getFeeds = async (after = null, limit = 12) => {
 };
 
 /**
+ * 팔로잉 피드 목록 조회
+ * GET /api/v1/following/feeds?after={id}&limit={n}
+ * @param {number|null} after - 커서 (feedId)
+ * @param {number} limit - 조회 개수
+ */
+export const getFollowingFeeds = async (after = null, limit = 12) => {
+  let url = `/following/feeds?limit=${limit}`;
+  if (after) {
+    url += `&after=${after}`;
+  }
+  return apiRequest(url, { method : "GET" }, BASE_URL_V2);
+};
+
+/**
  * 피드 상세 조회
  * GET /api/v1/feeds/{feedId}
  * @param {number} feedId
@@ -790,6 +805,64 @@ export const updateMyProfile = async (profileData) => {
     method: 'PUT',
     body: formData,
   });
+};
+
+/* ==============================================
+   팔로우 관련 API (v2)
+   ============================================== */
+
+/**
+ * 팔로우
+ * POST /api/v2/users/{userId}/follows
+ * @param {number} userId - 팔로우할 대상 유저 ID
+ */
+export const followUser = async (userId) => {
+  return apiRequest(`/users/${userId}/follows`, {
+    method: 'POST',
+  }, BASE_URL_V2);
+};
+
+/**
+ * 언팔로우
+ * DELETE /api/v2/users/{userId}/follows
+ * @param {number} userId - 언팔로우할 대상 유저 ID
+ */
+export const unfollowUser = async (userId) => {
+  return apiRequest(`/users/${userId}/follows`, {
+    method: 'DELETE',
+  }, BASE_URL_V2);
+};
+
+/**
+ * 팔로잉 목록 조회
+ * GET /api/v2/users/{userId}/following?after=xx&limit=20&sort=timeDesc
+ * @param {number} userId
+ * @param {string|null} after - 커서
+ * @param {number} limit
+ * @param {string} sort - 'timeDesc' | 'timeAsc'
+ */
+export const getFollowings = async (userId, after = null, limit = 20, sort = 'timeDesc') => {
+  let url = `/users/${userId}/following?limit=${limit}&sort=${sort}`;
+  if (after) {
+    url += `&after=${after}`;
+  }
+  return apiRequest(url, { method: 'GET' }, BASE_URL_V2);
+};
+
+/**
+ * 팔로워 목록 조회
+ * GET /api/v2/users/{userId}/followers?after=xx&limit=20&sort=timeDesc
+ * @param {number} userId
+ * @param {string|null} after - 커서
+ * @param {number} limit
+ * @param {string} sort - 'timeDesc' | 'timeAsc'
+ */
+export const getFollowers = async (userId, after = null, limit = 20, sort = 'timeDesc') => {
+  let url = `/users/${userId}/followers?limit=${limit}&sort=${sort}`;
+  if (after) {
+    url += `&after=${after}`;
+  }
+  return apiRequest(url, { method: 'GET' }, BASE_URL_V2);
 };
 
 /* ==============================================

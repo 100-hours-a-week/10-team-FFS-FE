@@ -23,8 +23,15 @@
 .feed-detail-page__author {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
   padding: var(--spacing-md);
+  cursor: pointer;
+  justify-content: space-between;
+}
+
+.feed-detail-page__author-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   cursor: pointer;
 }
 
@@ -484,4 +491,28 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-md);
+}
+
+.feed-detail-page__likes-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+
+.feed-detail-page__likes-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  cursor: pointer;
+}
+
+.feed-detail-page__likes-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  color: #999;
+  font-size: 14px;
 }

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Spinner } from '../components/common';
+import { Spinner, Modal, Button } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { getUserProfile, getUserFeeds } from '../api';
+import { getUserProfile, getUserFeeds, followUser, unfollowUser, getFollowings, getFollowers } from '../api';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import FeedList from './FeedList';
 import './ProfilePage.css';
@@ -13,10 +13,20 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
   const { user: currentUser } = useAuth();
-  const { error: showError } = useToast();
+  const { success, error: showError } = useToast();
 
   const [profile, setProfile] = useState(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+  // 팔로우 목록 모달 상태
+  const [modalType, setModalType] = useState(null); // 'following' | 'followers' | null
+  const [followList, setFollowList] = useState([]);
+  const [followCursor, setFollowCursor] = useState(null);
+  const [hasMoreFollow, setHasMoreFollow] = useState(false);
+  const [isLoadingFollow, setIsLoadingFollow] = useState(false);
+  const [followSort, setFollowSort] = useState('timeDesc'); // 'timeDesc' | 'timeAsc'
 
   // 프로필 조회
   useEffect(() => {
@@ -34,6 +44,7 @@ const ProfilePage = () => {
           followerCount: profileData.followerCount || 0,
           followingCount: profileData.followingCount || 0,
         });
+        setIsFollowing(profileData.isFollowing || false);
       } catch (err) {
         console.error('Failed to load profile:', err);
         if (err.message === 'target_user_not_found' || err.message === 'user_not_found') {
@@ -87,10 +98,126 @@ const ProfilePage = () => {
     setTimeout(() => loadMore(), 0);
   }, [userId, reset]);
 
+  // 팔로우 / 언팔로우
+  const handleToggleFollow = async () => {
+    if (isFollowLoading) return;
+    setIsFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await unfollowUser(userId);
+        setIsFollowing(false);
+        setProfile(prev => ({
+          ...prev,
+          followerCount: Math.max(0, prev.followerCount - 1),
+        }));
+      } else {
+        await followUser(userId);
+        setIsFollowing(true);
+        setProfile(prev => ({
+          ...prev,
+          followerCount: prev.followerCount + 1,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to toggle follow:', err);
+      if (err.message === 'already_following') {
+        showError('이미 팔로우한 유저입니다.');
+      } else {
+        showError('팔로우 처리에 실패했습니다.');
+      }
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
+
+  // 팔로우 목록 로드
+  const loadFollowList = async (type, cursor = null, sort = followSort) => {
+    setIsLoadingFollow(true);
+    try {
+      const response = type === 'following'
+        ? await getFollowings(userId, cursor, 20, sort)
+        : await getFollowers(userId, cursor, 20, sort);
+
+      const { items, pageInfo } = response.data;
+
+      const mappedUsers = items.map(item => ({
+        id: item.userProfile.userId,
+        profileImage: item.userProfile.userProfileImageUrl,
+        nickname: item.userProfile.nickname,
+        isFollowing: item.isFollowing,
+      }));
+
+      if (cursor) {
+        setFollowList(prev => [...prev, ...mappedUsers]);
+      } else {
+        setFollowList(mappedUsers);
+      }
+
+      setFollowCursor(pageInfo.nextCursor);
+      setHasMoreFollow(pageInfo.hasNextPage);
+    } catch (err) {
+      console.error('Failed to load follow list:', err);
+      showError('목록을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingFollow(false);
+    }
+  };
+
+  // 모달 열기
+  const handleOpenFollowModal = (type) => {
+    setModalType(type);
+    setFollowList([]);
+    setFollowCursor(null);
+    setFollowSort('timeDesc');
+    loadFollowList(type, null, 'timeDesc');
+  };
+
+  const handleSortChange = (newSort) => {
+    if (newSort === followSort) return;
+    setFollowSort(newSort);
+    setFollowList([]);
+    setFollowCursor(null);
+    loadFollowList(modalType, null, newSort);
+  };
+
+  // 모달 내 팔로우 토글
+  const handleToggleFollowInList = async (targetUserId) => {
+    const targetUser = followList.find(u => u.id === targetUserId);
+    if (!targetUser) return;
+
+    try {
+      if (targetUser.isFollowing) {
+        await unfollowUser(targetUserId);
+      } else {
+        await followUser(targetUserId);
+      }
+
+      setFollowList(prev => prev.map(u => {
+        if (u.id === targetUserId) {
+          return { ...u, isFollowing: !u.isFollowing };
+        }
+        return u;
+      }));
+
+      // 프로필 카운트 동기화 (내 프로필인 경우)
+      if (profile.isMe) {
+        setProfile(prev => ({
+          ...prev,
+          followingCount: targetUser.isFollowing
+            ? Math.max(0, prev.followingCount - 1)
+            : prev.followingCount + 1,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to toggle follow:', err);
+      showError('팔로우 처리에 실패했습니다.');
+    }
+  };
+
   // 설정 페이지로 이동
   const handleSettingsClick = () => navigate('/mypage/edit');
 
-  // 남의 옷장으로 이동
+  // 옷장으로 이동
   const handleClosetClick = () => navigate(`/closet/${userId}`);
 
   if (isProfileLoading) {
@@ -129,24 +256,46 @@ const ProfilePage = () => {
           <div className="my-page__info">
             <h2 className="my-page__nickname">{profile.nickname}</h2>
             <div className="my-page__stats">
-              <span>피드 {feeds.length}</span>
+              <span style={{ marginRight: '20px' }}>피드 {feeds.length}</span>
+              <span
+                onClick={() => handleOpenFollowModal('following')}
+                style={{ marginRight: '20px', cursor: 'pointer' }}
+              >
+                팔로잉 {profile.followingCount}
+              </span>
+              <span
+                onClick={() => handleOpenFollowModal('followers')}
+                style={{ marginRight: '20px', cursor: 'pointer' }}
+              >
+                팔로워 {profile.followerCount}
+              </span>
             </div>
           </div>
         </div>
 
         {/* 버튼 영역 */}
-          <div className="my-page__buttons">
-            {profile.isMe &&(
-              <button className="my-page__btn" onClick={() => navigate('/mypage/edit')}>
-                계정 관리
-              </button>
-            )}
-            <button className="my-page__btn" onClick={handleClosetClick}>
-              옷장 구경하러 가기
+        <div className="my-page__buttons">
+          {profile.isMe ? (
+            <button className="my-page__btn" onClick={() => navigate('/mypage/edit')}>
+              계정 관리
             </button>
-          </div>
+          ) : (
+            <>
+            <button
+              className={isFollowing? "my-page__btn --unfollowing" : "my-page__btn --following"}
+              onClick={handleToggleFollow}
+              disabled={isFollowLoading}
+            >
+              {isFollowLoading ? '' : isFollowing ? '팔로잉' : '팔로우'}
+            </button>
+            </>
+          )}
+          <button className="my-page__btn" onClick={handleClosetClick}>
+            옷장 구경하러 가기
+          </button>
+        </div>
 
-        {/* ✅ FeedList로 통일 + 무한 스크롤 */}
+        {/* 피드 목록 */}
         <div className="my-page__feeds">
           {feeds.length === 0 && !isFeedsLoading ? (
             <div className="my-page__feeds-empty">
@@ -166,6 +315,87 @@ const ProfilePage = () => {
             />
           )}
         </div>
+
+        {/* 팔로잉/팔로워 목록 모달 */}
+        <Modal
+          isOpen={modalType !== null}
+          onClose={() => setModalType(null)}
+          title={modalType === 'following' ? '팔로잉' : '팔로워'}
+        >
+          <div className="follow-modal__list">
+            <div className="follow-modal__tabs">
+              <button
+                className={`follow-modal__tab ${followSort === 'timeDesc' ? 'follow-modal__tab--active' : ''}`}
+                onClick={() => handleSortChange('timeDesc')}
+              >
+                최신순
+              </button>
+              <button
+                className={`follow-modal__tab ${followSort === 'timeAsc' ? 'follow-modal__tab--active' : ''}`}
+                onClick={() => handleSortChange('timeAsc')}
+              >
+                오래된순
+              </button>
+            </div>
+            {isLoadingFollow && followList.length === 0 ? (
+              <div className="follow-modal__loading">
+                <Spinner size="small" />
+              </div>
+            ) : followList.length === 0 ? (
+              <div className="follow-modal__empty">
+                {modalType === 'following' ? '팔로잉하는 사람이 없습니다.' : '팔로워가 없습니다.'}
+              </div>
+            ) : (
+              <>
+                {followList.map(followedUser => (
+                  <div 
+                    key={followedUser.id} 
+                    className="follow-modal__item"
+                  >
+                    <div
+                      className="follow-modal__user-info"
+                      onClick={() => {
+                        setModalType(null);
+                        navigate(`/profile/${followedUser.id}`);
+                      }}
+                    >
+                      <div className="follow-modal__avatar">
+                        {followedUser.profileImage ? (
+                          <img src={followedUser.profileImage} alt={followedUser.nickname} />
+                        ) : (
+                          <div className="follow-modal__avatar-placeholder" />
+                        )}
+                      </div>
+                      <span>{followedUser.nickname}</span>
+                    </div>
+                    {followedUser.id !== currentUser?.id && (
+                      <Button
+                        size="small"
+                        variant={followedUser.isFollowing ? 'secondary' : 'primary'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleFollowInList(followedUser.id);
+                        }}
+                      >
+                        {followedUser.isFollowing ? '팔로잉' : '팔로우'}
+                      </Button>
+                    )}
+                  </div>
+                ))}
+
+                {hasMoreFollow && (
+                  <button
+                    className="follow-modal__load-more"
+                    onClick={() => loadFollowList(modalType, followCursor)}
+                    disabled={isLoadingFollow}
+                  >
+                    {isLoadingFollow ? '로딩 중...' : '더보기'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </Modal>
       </div>
     </div>
   );

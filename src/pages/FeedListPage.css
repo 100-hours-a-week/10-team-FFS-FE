@@ -135,3 +135,43 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
 }
+/* ============================================================
+   FeedListPage.css에 추가할 탭 스타일
+   ============================================================ */
+
+.feed-list-page__tabs {
+  display: flex;
+  position: sticky;
+  top: 52px; /* Header 높이에 맞춰서 조정 */
+  z-index: 10;
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.feed-list-page__tab {
+  flex: 1;
+  padding: 14px 0;
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: #999;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.feed-list-page__tab--active {
+  color: #262626;
+  font-weight: 600;
+}
+
+.feed-list-page__tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #262626;
+}

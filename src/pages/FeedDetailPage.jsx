@@ -16,7 +16,9 @@ import {
   updateComment,
   deleteComment,
   likeComment,
-  unlikeComment
+  unlikeComment,
+  followUser,
+  unfollowUser
 } from '../api';
 import { formatDate, formatNumber } from '../utils/helpers';
 import { 
@@ -68,6 +70,8 @@ const FeedDetailPage = () => {
   // 500자 넘으면 경고
   const MAX_CONTENT_LENGTH = 500;
   const [warned, setWarned] = useState(false);
+
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   // 피드 데이터 로드
   useEffect(() => {
@@ -216,6 +220,15 @@ const FeedDetailPage = () => {
         isFollowing: item.isFollowing,
       }));
       
+      mappedUsers.sort((a, b) => {
+        const aIsMe = a.id === user?.id;
+        const bIsMe = b.id === user?.id;
+        if (aIsMe) return 1;
+        if (bIsMe) return -1;
+        if (a.isFollowing === b.isFollowing) return 0;
+        return a.isFollowing ? -1 : 1;
+      });
+      
       if (cursor) {
         setLikedUsers(prev => [...prev, ...mappedUsers]);
       } else {
@@ -262,6 +275,65 @@ const FeedDetailPage = () => {
       showError('좋아요 처리에 실패했습니다.');
     }
   };
+
+  const handleToggleFollow = async (targetUserId) => {
+    const targetUser = likedUsers.find(u => u.id === targetUserId);
+    if (!targetUser) return;
+  
+    try {
+      if (targetUser.isFollowing) {
+        await unfollowUser(targetUserId);
+      } else {
+        await followUser(targetUserId);
+      }
+  
+      // 좋아요 목록에서 팔로우 상태 업데이트
+      setLikedUsers(prev => prev.map(u => {
+        if (u.id === targetUserId) {
+          return { ...u, isFollowing: !u.isFollowing };
+        }
+        return u;
+      }));
+  
+      // 피드 작성자의 팔로우 상태도 동기화
+      if (feed && feed.author.id === targetUserId) {
+        setFeed(prev => ({
+          ...prev,
+          isFollowing: !targetUser.isFollowing,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to toggle follow:', err);
+      if (err.message === 'already_following') {
+        showError('이미 팔로우한 유저입니다.');
+      } else {
+        showError('팔로우 처리에 실패했습니다.');
+      }
+    }
+  };
+
+
+  const handleToggleAuthorFollow = async () => {
+    if (feed.isFollowLoading) return;
+    setIsFollowLoading(true);
+    try {
+      if (feed.isFollowing) {
+        await unfollowUser(feed.author.id);
+      } else {
+        await followUser(feed.author.id);
+      }
+      setFeed(prev => ({
+        ...prev,
+        isFollowing: !prev.isFollowing,
+      }));
+    } catch (err) {
+      console.error('Failed to toggle follow:', err);
+      showError('팔로우 처리에 실패했습니다.');
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
+  
 
   const handleCommentLike = async (commentId, isReply = false, parentCommentId = null) => {
     try {
@@ -621,24 +693,42 @@ const FeedDetailPage = () => {
       <Header 
         showBack 
         title="피드"
-        rightAction={feed.isOwner ? () => setShowActionSheet(true) : undefined}
-        rightIcon={feed.isOwner ? <IoEllipsisHorizontal size={24} /> : undefined}
       />
 
       <div className="feed-detail-page__content">
         {/* 작성자 정보 */}
-        <div 
-          className="feed-detail-page__author"
-          onClick={() => navigate(`/profile/${feed.author.id}`)}
-        >
-          <div className="feed-detail-page__avatar">
-            {feed.author.profileImage ? (
-              <img src={feed.author.profileImage} alt={feed.author.nickname} />
-            ) : (
-              <div className="feed-detail-page__avatar-placeholder" />
-            )}
+        <div className="feed-detail-page__author">
+          <div 
+            className="feed-detail-page__author-info"
+            onClick={() => navigate(`/profile/${feed.author.id}`)}
+          >
+            <div className="feed-detail-page__avatar">
+              {feed.author.profileImage ? (
+                <img src={feed.author.profileImage} alt={feed.author.nickname} />
+              ) : (
+                <div className="feed-detail-page__avatar-placeholder" />
+              )}
+            </div>
+            <span className="feed-detail-page__nickname">{feed.author.nickname}</span>
           </div>
-          <span className="feed-detail-page__nickname">{feed.author.nickname}</span>
+
+          {feed.isOwner ? (
+            <button
+              className="feed-detail-page__more-btn"
+              onClick={() => setShowActionSheet(true)}
+            >
+              <IoEllipsisHorizontal size={24} />
+            </button>
+          ) : (
+            <Button
+              size="small"
+              variant={feed.isFollowing ? 'secondary' : 'primary'}
+              onClick={handleToggleAuthorFollow}
+              disabled={isFollowLoading}
+            >
+              {isFollowLoading ? '' : feed.isFollowing ? '팔로잉' : '팔로우'}
+            </Button>
+          )}
         </div>
 
         {/* 이미지 슬라이더 */}
@@ -970,19 +1060,35 @@ const FeedDetailPage = () => {
                 <div 
                   key={likedUser.id} 
                   className="feed-detail-page__likes-item"
-                  onClick={() => {
-                    setShowLikesModal(false);
-                    navigate(`/profile/${likedUser.id}`);
-                  }}
                 >
-                  <div className="feed-detail-page__likes-avatar">
-                    {likedUser.profileImage ? (
-                      <img src={likedUser.profileImage} alt={likedUser.nickname} />
-                    ) : (
-                      <div className="feed-detail-page__likes-avatar-placeholder" />
-                    )}
+                  <div 
+                    className="feed-detail-page__likes-user-info"
+                    onClick={() => {
+                      setShowLikesModal(false);
+                      navigate(`/profile/${likedUser.id}`);
+                    }}
+                  >
+                    <div className="feed-detail-page__likes-avatar">
+                      {likedUser.profileImage ? (
+                        <img src={likedUser.profileImage} alt={likedUser.nickname} />
+                      ) : (
+                        <div className="feed-detail-page__likes-avatar-placeholder" />
+                      )}
+                    </div>
+                    <span>{likedUser.nickname}</span>
                   </div>
-                  <span>{likedUser.nickname}</span>
+                  {likedUser.id !== user?.id && (
+                    <Button
+                      size="small"
+                      variant={likedUser.isFollowing ? 'secondary' : 'primary'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFollow(likedUser.id);
+                      }}
+                    >
+                      {likedUser.isFollowing ? '팔로잉' : '팔로우'}
+                    </Button>
+                  )}
                 </div>
               ))}
               
