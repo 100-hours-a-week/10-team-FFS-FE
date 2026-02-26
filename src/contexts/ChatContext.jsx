@@ -94,6 +94,8 @@ export const ChatProvider = ({ children }) => {
         Authorization: `Bearer ${accessToken}`,
       },
       reconnectDelay: 5000,
+      heartbeatIncoming: 30000,
+      heartbeatOutgoing: 30000,
       onConnect: () => {
         // 초기 언읽음 상태 조회
         fetchUnreadStatus();
