@@ -879,4 +879,54 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
+/* ==============================================
+   채팅 관련 API (BASE_URL_V2 + /chat)
+   ============================================== */
+
+export const getChatRooms = (cursor, limit = 20) =>
+  apiRequest(
+    `/chat/rooms${cursor ? `?cursor=${cursor}&limit=${limit}` : `?limit=${limit}`}`,
+    {},
+    BASE_URL_V2
+  );
+
+export const getChatMessages = (roomId, cursor, limit = 50) =>
+  apiRequest(
+    `/chat/rooms/${roomId}/messages${cursor ? `?cursor=${cursor}&limit=${limit}` : `?limit=${limit}`}`,
+    {},
+    BASE_URL_V2
+  );
+
+export const getUnreadChatMessages = (roomId, cursor, limit = 50) =>
+  apiRequest(
+    `/chat/rooms/${roomId}/messages/unread${cursor ? `?cursor=${cursor}&limit=${limit}` : `?limit=${limit}`}`,
+    {},
+    BASE_URL_V2
+  );
+
+export const createChatRoom = (opponentUserId) =>
+  apiRequest(
+    '/chat/rooms',
+    { method: 'POST', body: JSON.stringify({ opponentUserId }) },
+    BASE_URL_V2
+  );
+
+export const leaveChatRoom = (roomId) =>
+  apiRequest(`/chat/rooms/${roomId}/participants`, { method: 'DELETE' }, BASE_URL_V2);
+
+export const markChatAsRead = (roomId, lastReadMessageId) =>
+  apiRequest(
+    `/chat/rooms/${roomId}/read`,
+    { method: 'PUT', body: JSON.stringify({ lastReadMessageId }) },
+    BASE_URL_V2
+  );
+
+export const getUnreadChatStatus = () =>
+  apiRequest('/chat/unread', {}, BASE_URL_V2);
+
+export const getWsUrl = () => {
+  const base = process.env.REACT_APP_BASE_URL_DEV || 'http://localhost:8080/api/v1';
+  return base.replace('/api/v1', '').replace(/^http/, 'ws') + '/ws';
+};
+
 export { getAccessToken, setAccessToken, removeAccessToken, getUserId, setUserId, removeUserId };

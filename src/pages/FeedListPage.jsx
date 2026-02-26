@@ -4,12 +4,15 @@ import { Header } from '../components/layout';
 import { ScrollToTopButton } from '../components/common';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import { getFeeds, getFollowingFeeds } from '../api';
+import { useChatContext } from '../contexts/ChatContext';
+import { IoPaperPlaneOutline } from 'react-icons/io5';
 import FeedList from './FeedList';
 import './FeedListPage.css';
 
 
 const FeedListPage = () => {
   const navigate = useNavigate();
+  const { hasUnread } = useChatContext();
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'following'
 
   const fetchAllFeeds = useCallback(async (cursor) => {
@@ -81,7 +84,18 @@ const FeedListPage = () => {
 
   return (
     <div className="feed-list-page">
-      <Header title="피드" />
+      <Header
+        title="피드"
+        rightElement={
+          <button
+            className="feed-list-page__dm-btn"
+            onClick={() => navigate('/dm')}
+          >
+            <IoPaperPlaneOutline size={24} />
+            {hasUnread && <span className="feed-list-page__dm-dot" />}
+          </button>
+        }
+      />
 
       {/* 탭 */}
       <div className="feed-list-page__tabs">

@@ -4,7 +4,7 @@ import { Header } from '../components/layout';
 import { Spinner, Modal, Button } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { getUserProfile, getUserFeeds, followUser, unfollowUser, getFollowings, getFollowers } from '../api';
+import { getUserProfile, getUserFeeds, followUser, unfollowUser, getFollowings, getFollowers, createChatRoom } from '../api';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import FeedList from './FeedList';
 import './ProfilePage.css';
@@ -96,7 +96,7 @@ const ProfilePage = () => {
     if (!userId) return;
     reset();
     setTimeout(() => loadMore(), 0);
-  }, [userId, reset]);
+  }, [userId, reset, loadMore]);
 
   // 팔로우 / 언팔로우
   const handleToggleFollow = async () => {
@@ -214,6 +214,27 @@ const ProfilePage = () => {
     }
   };
 
+  // 메시지 보내기
+  const handleSendMessage = async () => {
+    try {
+      const response = await createChatRoom(Number(userId));
+      const roomId = response.data.roomId;
+      navigate(`/dm/${roomId}`, {
+        state: {
+          opponent: {
+            userId: profile.id,
+            nickname: profile.nickname,
+            profileImageUrl: profile.profileImage,
+          },
+          unreadCount: 0,
+        },
+      });
+    } catch (err) {
+      console.error('채팅방 생성 실패:', err);
+      showError('채팅방을 열 수 없습니다.');
+    }
+  };
+
   // 설정 페이지로 이동
   const handleSettingsClick = () => navigate('/mypage/edit');
 
@@ -287,6 +308,9 @@ const ProfilePage = () => {
               disabled={isFollowLoading}
             >
               {isFollowLoading ? '' : isFollowing ? '팔로잉' : '팔로우'}
+            </button>
+            <button className="my-page__btn" onClick={handleSendMessage}>
+              메시지 보내기
             </button>
             </>
           )}

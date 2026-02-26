@@ -14,3 +14,5 @@ export { default as OtherClosetDetailPage } from './OtherClosetDetailPage';
 export { default as MyPageEdit } from './MyPageEdit';
 export { default as ClothesUploadPage } from './ClothesUploadPage';
 export { default as ClothesEditPage } from './ClothesEditPage';
+export { default as DmListPage } from './DmListPage';
+export { default as DmChatPage } from './DmChatPage';

@@ -4,10 +4,10 @@ import { Header } from '../components/layout';
 import { Button, Spinner, AlertModal, ActionSheet, Modal, ScrollToTopButton } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { 
-  getFeedDetail, 
-  likeFeed, 
-  unlikeFeed, 
+import {
+  getFeedDetail,
+  likeFeed,
+  unlikeFeed,
   getFeedLikes,
   deleteFeed,
   getComments,
@@ -18,12 +18,15 @@ import {
   likeComment,
   unlikeComment,
   followUser,
-  unfollowUser
+  unfollowUser,
+  getChatRooms,
 } from '../api';
+import { useChatContext } from '../contexts/ChatContext';
 import { formatDate, formatNumber } from '../utils/helpers';
-import { 
-  IoHeart, IoHeartOutline, IoChatbubbleOutline, 
-  IoChevronBack, IoChevronForward, IoEllipsisHorizontal 
+import {
+  IoHeart, IoHeartOutline, IoChatbubbleOutline,
+  IoChevronBack, IoChevronForward, IoEllipsisHorizontal,
+  IoPaperPlaneOutline,
 } from 'react-icons/io5';
 import './FeedDetailPage.css';
 
@@ -32,6 +35,7 @@ const FeedDetailPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { success, error: showError } = useToast();
+  const { sendChatMessage } = useChatContext();
   const commentInputRef = useRef(null);
   const commentsObserverRef = useRef(null);
   const isLoadingCommentsRef = useRef(false);
@@ -66,6 +70,12 @@ const FeedDetailPage = () => {
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // 공유 관련 상태
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showDmModal, setShowDmModal] = useState(false);
+  const [dmRooms, setDmRooms] = useState([]);
+  const [isDmRoomsLoading, setIsDmRoomsLoading] = useState(false);
 
   // 500자 넘으면 경고
   const MAX_CONTENT_LENGTH = 500;
@@ -667,6 +677,64 @@ const FeedDetailPage = () => {
     return '등록';
   };
 
+  // 링크 복사
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      success('링크가 복사되었습니다');
+    } catch (_) {
+      showError('링크 복사에 실패했습니다.');
+    }
+    setShowShareSheet(false);
+  };
+
+  // DM 공유 모달 열기
+  const handleOpenDmShare = async () => {
+    setShowShareSheet(false);
+    setShowDmModal(true);
+    setIsDmRoomsLoading(true);
+    try {
+      const response = await getChatRooms(null, 20);
+      setDmRooms(response.data.rooms ?? []);
+    } catch (err) {
+      console.error('채팅방 목록 조회 실패:', err);
+      setDmRooms([]);
+    } finally {
+      setIsDmRoomsLoading(false);
+    }
+  };
+
+  // 채팅방 선택하여 피드 공유
+  const handleShareToRoom = async (room) => {
+    try {
+      sendChatMessage(room.roomId, {
+        type: 'FEED',
+        relatedFeedId: Number(feedId),
+        clientMessageId: crypto.randomUUID(),
+      });
+      setShowDmModal(false);
+      success('피드를 공유했습니다');
+      navigate(`/dm/${room.roomId}`, {
+        state: {
+          opponent: {
+            userId: room.opponent?.userId,
+            nickname: room.opponent?.nickname,
+            profileImageUrl: room.opponent?.profileImageUrl,
+          },
+          unreadCount: 0,
+        },
+      });
+    } catch (err) {
+      console.error('피드 공유 실패:', err);
+      showError('피드 공유에 실패했습니다.');
+    }
+  };
+
+  const shareActions = [
+    { label: '링크 복사', onClick: handleCopyLink },
+    { label: 'DM으로 공유', onClick: handleOpenDmShare },
+  ];
+
   const feedActions = feed?.isOwner ? [
     { label: '수정', onClick: () => navigate(`/feed/${feedId}/edit`) },
     { label: '삭제', onClick: () => {
@@ -782,17 +850,23 @@ const FeedDetailPage = () => {
 
         {/* 액션 버튼들 */}
         <div className="feed-detail-page__actions">
-          <button 
+          <button
             className={`feed-detail-page__action-btn ${isLiked ? 'feed-detail-page__action-btn--liked' : ''}`}
             onClick={handleLike}
           >
             {isLiked ? <IoHeart size={24} /> : <IoHeartOutline size={24} />}
           </button>
-          <button 
+          <button
             className="feed-detail-page__action-btn"
             onClick={() => commentInputRef.current?.focus()}
           >
             <IoChatbubbleOutline size={24} />
+          </button>
+          <button
+            className="feed-detail-page__action-btn"
+            onClick={() => setShowShareSheet(true)}
+          >
+            <IoPaperPlaneOutline size={24} />
           </button>
         </div>
 
@@ -1112,6 +1186,51 @@ const FeedDetailPage = () => {
         onClose={() => setShowActionSheet(false)}
         actions={feedActions}
       />
+
+      {/* 공유 액션 시트 */}
+      <ActionSheet
+        isOpen={showShareSheet}
+        onClose={() => setShowShareSheet(false)}
+        actions={shareActions}
+      />
+
+      {/* DM 채팅방 선택 모달 */}
+      <Modal
+        isOpen={showDmModal}
+        onClose={() => setShowDmModal(false)}
+        title="DM으로 공유"
+      >
+        <div className="feed-detail-page__dm-list">
+          {isDmRoomsLoading ? (
+            <div className="feed-detail-page__dm-loading">
+              <Spinner size="small" />
+            </div>
+          ) : dmRooms.length === 0 ? (
+            <div className="feed-detail-page__dm-empty">
+              채팅 중인 대화가 없습니다
+            </div>
+          ) : (
+            dmRooms.map(room => (
+              <div
+                key={room.roomId}
+                className="feed-detail-page__dm-room"
+                onClick={() => handleShareToRoom(room)}
+              >
+                <div className="feed-detail-page__dm-avatar">
+                  {room.opponent?.profileImageUrl ? (
+                    <img src={room.opponent.profileImageUrl} alt={room.opponent.nickname} />
+                  ) : (
+                    <div className="feed-detail-page__dm-avatar-placeholder" />
+                  )}
+                </div>
+                <span className="feed-detail-page__dm-nickname">
+                  {room.opponent?.nickname}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </Modal>
 
       {/* 삭제 확인 모달 */}
       <AlertModal
