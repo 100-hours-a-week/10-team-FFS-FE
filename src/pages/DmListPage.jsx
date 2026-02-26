@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Spinner } from '../components/common';
@@ -42,6 +42,9 @@ const formatRoomTime = (timeStr) => {
   return `${date.getMonth() + 1}.${date.getDate()}`;
 };
 
+// 활성 채팅방(lastMessage 있는 방)이 이 수 미만이면 다음 페이지 자동 로드
+const MIN_VISIBLE_ROOMS = 10;
+
 const DmListPage = () => {
   const navigate = useNavigate();
   const { latestRoomUpdate, myUserId } = useChatContext();
@@ -55,6 +58,19 @@ const DmListPage = () => {
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
   const isLoadingMoreRef = useRef(false);
+
+  // rooms 최신값을 effect 의존성 없이 참조하기 위한 ref
+  // (latestRoomUpdate effect에서 rooms를 deps에 추가하면 무한루프 위험)
+  const roomsRef = useRef(rooms);
+  useEffect(() => {
+    roomsRef.current = rooms;
+  }, [rooms]);
+
+  // 렌더마다 filter를 중복 실행하지 않도록 메모이제이션
+  const visibleRooms = useMemo(
+    () => rooms.filter(room => room.lastMessage != null),
+    [rooms]
+  );
 
   // 채팅방 목록 로드
   const loadRooms = useCallback(async (nextCursor = null) => {
@@ -91,27 +107,37 @@ const DmListPage = () => {
     loadRooms(null);
   }, [loadRooms]);
 
-  // 실시간 채팅방 업데이트 반영
+  // 활성 채팅방이 MIN_VISIBLE_ROOMS 미만이면 다음 페이지 자동 로드
+  // (빈 채팅방이 많을 경우 사용자가 스크롤도 못하고 빈 화면을 보는 상황 방지)
   useEffect(() => {
-    if (!latestRoomUpdate) {
+    if (isLoading) { return; }
+    if (visibleRooms.length < MIN_VISIBLE_ROOMS && hasMore && !isLoadingMoreRef.current) {
+      loadRooms(cursor);
+    }
+  }, [visibleRooms, hasMore, isLoading, cursor, loadRooms]);
+
+  // 실시간 채팅방 업데이트 반영
+  // roomsRef를 사용해 setState 업데이터를 순수 함수로 유지
+  // (업데이터 내 loadRooms 호출은 Strict Mode에서 2회 실행될 수 있는 안티패턴)
+  useEffect(() => {
+    if (!latestRoomUpdate || latestRoomUpdate.senderId === myUserId) {
       return;
     }
-    if (latestRoomUpdate.senderId === myUserId) {
+
+    const idx = roomsRef.current.findIndex(r => r.roomId === latestRoomUpdate.roomId);
+    if (idx === -1) {
+      // 새 채팅방이면 목록 다시 로드 (업데이터 밖에서 호출)
+      loadRooms(null);
       return;
     }
 
     setRooms(prev => {
-      const idx = prev.findIndex(r => r.roomId === latestRoomUpdate.roomId);
-      if (idx === -1) {
-        // 새 채팅방이면 목록 다시 로드
-        loadRooms(null);
-        return prev;
-      }
-      const updated = { ...prev[idx] };
+      const prevIdx = prev.findIndex(r => r.roomId === latestRoomUpdate.roomId);
+      if (prevIdx === -1) { return prev; }
+      const updated = { ...prev[prevIdx] };
       updated.lastMessage = { ...latestRoomUpdate.lastMessage };
       updated.unreadCount = (updated.unreadCount || 0) + 1;
-
-      const rest = prev.filter((_, i) => i !== idx);
+      const rest = prev.filter((_, i) => i !== prevIdx);
       return [updated, ...rest];
     });
   }, [latestRoomUpdate, myUserId, loadRooms]);
@@ -170,13 +196,13 @@ const DmListPage = () => {
         <div className="dm-list-page__loading">
           <Spinner size="large" />
         </div>
-      ) : rooms.length === 0 ? (
+      ) : visibleRooms.length === 0 ? (
         <div className="dm-list-page__empty">
           <p>메시지가 없습니다</p>
         </div>
       ) : (
         <div className="dm-list-page__list">
-          {rooms.map((room) => (
+          {visibleRooms.map((room) => (
             <div
               key={room.roomId}
               className="dm-list-page__room"

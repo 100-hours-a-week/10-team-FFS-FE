@@ -16,6 +16,26 @@ import './DmChatPage.css';
 const MAX_IMAGES = 3;
 const SEND_TIMEOUT = 5000;
 
+// 이미지 로드 실패 시 X placeholder 표시
+const ChatImage = ({ src, alt, className }) => {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div className="dm-chat-page__bubble-image-error">
+        <span>✕</span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  );
+};
+
 // 시간 포맷: 오전/오후 H:MM
 const formatMessageTime = (timeStr) => {
   if (!timeStr) {
@@ -561,7 +581,7 @@ const DmChatPage = () => {
                     {msg.type === 'IMAGE' && (
                       <div className="dm-chat-page__bubble-images">
                         {(msg.images || []).map((img, i) => (
-                          <img
+                          <ChatImage
                             key={i}
                             src={img.imageUrl}
                             alt={`이미지 ${i + 1}`}
