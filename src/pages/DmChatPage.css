@@ -1,0 +1,330 @@
+.dm-chat-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-bg-primary);
+  position: relative;
+}
+
+/* ===== 커스텀 헤더 ===== */
+.dm-chat-page__header {
+  display: flex;
+  align-items: center;
+  height: var(--header-height);
+  padding: 0 var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-primary);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  gap: var(--spacing-sm);
+}
+
+.dm-chat-page__header-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--color-text-primary);
+}
+
+.dm-chat-page__header-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.dm-chat-page__header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: var(--color-bg-tertiary);
+}
+
+.dm-chat-page__header-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dm-chat-page__header-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-tertiary);
+}
+
+.dm-chat-page__header-nickname {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-chat-page__header-right {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dm-chat-page__header-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+/* 드롭다운 메뉴 */
+.dm-chat-page__dropdown {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-dropdown);
+  min-width: 140px;
+  overflow: hidden;
+}
+
+.dm-chat-page__dropdown-item {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.dm-chat-page__dropdown-item:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.dm-chat-page__dropdown-item--danger {
+  color: var(--color-error);
+}
+
+/* ===== 메시지 영역 ===== */
+.dm-chat-page__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.dm-chat-page__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.dm-chat-page__loading-more {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-sm) 0;
+}
+
+/* ===== 말풍선 ===== */
+.dm-chat-page__bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+.dm-chat-page__bubble-wrap--mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.dm-chat-page__bubble-wrap--theirs {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.dm-chat-page__bubble {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.dm-chat-page__bubble--mine {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.dm-chat-page__bubble--theirs {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.dm-chat-page__bubble-text {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+/* 이미지 메시지 */
+.dm-chat-page__bubble-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dm-chat-page__bubble-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+/* 피드 메시지 */
+.dm-chat-page__bubble-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+.dm-chat-page__bubble-feed-thumb {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.dm-chat-page__bubble-feed-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* 메시지 메타 (시간, 상태) */
+.dm-chat-page__bubble-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: 2px;
+}
+
+.dm-chat-page__bubble-meta--mine {
+  flex-direction: row-reverse;
+}
+
+.dm-chat-page__time {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+/* 전송 상태 */
+.dm-chat-page__status {
+  font-size: 11px;
+}
+
+.dm-chat-page__status--sending {
+  color: var(--color-text-tertiary);
+}
+
+.dm-chat-page__status--failed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dm-chat-page__retry-btn,
+.dm-chat-page__delete-btn {
+  font-size: 11px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+
+.dm-chat-page__retry-btn {
+  color: var(--color-info);
+}
+
+.dm-chat-page__delete-btn {
+  color: var(--color-error);
+}
+
+/* ===== 입력 바 ===== */
+.dm-chat-page__input-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-primary);
+}
+
+.dm-chat-page__image-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.dm-chat-page__text-input {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  outline: none;
+  background-color: var(--color-bg-secondary);
+}
+
+.dm-chat-page__text-input:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-primary);
+}
+
+.dm-chat-page__send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.dm-chat-page__send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

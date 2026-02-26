@@ -175,3 +175,29 @@
   height: 2px;
   background-color: #262626;
 }
+
+/* DM 아이콘 버튼 */
+.feed-list-page__dm-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+/* 안읽은 메시지 red-dot */
+.feed-list-page__dm-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-like);
+  border: 2px solid var(--color-bg-primary);
+}

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { ChatProvider } from './contexts/ChatContext';
 import { AppLayout } from './components/layout';
 import {
   LoginPage,
@@ -20,6 +21,8 @@ import {
   OtherClosetListPage,
   OtherClosetDetailPage,
   MyPageEdit,
+  DmListPage,
+  DmChatPage,
 } from './pages';
 import { FullPageLoading } from './components/common';
 import './styles/global.css';
@@ -111,6 +114,10 @@ function AppRoutes() {
         {/* 프로필 편집 */}
         <Route path="/mypage/edit" element={<MyPageEdit />} />
 
+        {/* DM 채팅 */}
+        <Route path="/dm" element={<DmListPage />} />
+        <Route path="/dm/:roomId" element={<DmChatPage />} />
+
         <Route path="/test" element={<ClosetUploadPage />} />
       </Route>
 
@@ -125,7 +132,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <AppRoutes />
+          <ChatProvider>
+            <AppRoutes />
+          </ChatProvider>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

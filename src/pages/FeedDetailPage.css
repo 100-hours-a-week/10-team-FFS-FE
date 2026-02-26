@@ -516,3 +516,59 @@
   color: #999;
   font-size: 14px;
 }
+/* DM 공유 모달 */
+.feed-detail-page__dm-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-detail-page__dm-loading,
+.feed-detail-page__dm-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.feed-detail-page__dm-room {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.feed-detail-page__dm-room:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.feed-detail-page__dm-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--color-bg-tertiary);
+  flex-shrink: 0;
+}
+
+.feed-detail-page__dm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-detail-page__dm-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-tertiary);
+}
+
+.feed-detail-page__dm-nickname {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
