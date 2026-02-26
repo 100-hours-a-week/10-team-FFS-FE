@@ -42,27 +42,34 @@ const DmChatPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // 언읽음 모드: 아래 방향(forward) 페이징 + 위 방향(backward) 이력 페이징 이중 관리
   const [isUnreadMode, setIsUnreadMode] = useState(false);
   const [forwardCursor, setForwardCursor] = useState(null);
   const [hasMoreUnread, setHasMoreUnread] = useState(false);
+
+  // UI 상태
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoadingMoreUnread, setIsLoadingMoreUnread] = useState(false);
-
   const [inputText, setInputText] = useState('');
-
   const [showMenu, setShowMenu] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   const messagesEndRef = useRef(null);
-  const messagesTopRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const subscriptionRef = useRef(null);
-  const pendingMessagesRef = useRef({}); // clientMessageId → timeout
+  const pendingMessagesRef = useRef({});
   const fileInputRef = useRef(null);
 
-  // 메시지 배열 끝으로 스크롤
+  // 초기 스크롤 포지셔닝 중 scroll 핸들러를 차단하는 플래그
+  // smooth 애니메이션 scroll 이벤트가 loadMoreMessages를 조기 호출하는 버그 방지
+  const isInitializingRef = useRef(false);
+
+  // 동기적 로딩 가드: 상태 업데이트 비동기 특성으로 인한 race condition 방지
+  const isLoadingMoreRef = useRef(false);
+  const isLoadingMoreUnreadRef = useRef(false);
+
+  // 새 메시지 수신 시 smooth 스크롤 (사용자가 이미 하단 근처에 있을 때)
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -131,24 +138,32 @@ const DmChatPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
-  // 로드 후 초기 스크롤
-  // - 일반 모드: 최신 메시지(하단)로 이동
+  // 로드 후 초기 스크롤 (1회)
+  // - 일반 모드: 최신 메시지(하단)로 즉시 이동
   // - 언읽음 모드: 첫 번째 언읽음 메시지가 최상단에 보이도록 scrollTop = 0
+  // ※ isInitializingRef로 포지셔닝 중 scroll 핸들러를 차단 → loadMoreMessages 조기 호출 방지
   useEffect(() => {
     if (!isLoading && messages.length > 0) {
+      const container = scrollContainerRef.current;
+      if (!container) { return; }
+
+      isInitializingRef.current = true;
+
+      if (isUnreadMode) {
+        container.scrollTop = 0;
+      } else {
+        // instant 스크롤: smooth 애니메이션 중 scroll 이벤트 발생 방지
+        container.scrollTop = container.scrollHeight;
+      }
+
+      // scrollTop 변경으로 발생하는 동기 scroll 이벤트 처리 후 가드 해제
       setTimeout(() => {
-        if (isUnreadMode) {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = 0;
-          }
-        } else {
-          scrollToBottom();
-        }
-      }, 100);
+        isInitializingRef.current = false;
+      }, 0);
     }
-  // messages.length는 의도적으로 제외: 로드 완료 시에만 1회 스크롤
+  // messages.length는 의도적으로 제외: 로드 완료 시에만 1회 실행
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isUnreadMode, scrollToBottom]);
+  }, [isLoading, isUnreadMode]);
 
   // STOMP 구독
   useEffect(() => {
@@ -222,11 +237,13 @@ const DmChatPage = () => {
     scrollToBottom();
   }, [roomId, scrollToBottom]);
 
-  // 이전 메시지 더보기 (상단 스크롤)
+  // 이전 메시지 더보기 (상단 스크롤 시 backward 페이징)
   const loadMoreMessages = useCallback(async () => {
-    if (!hasMore || !cursor || isLoadingMore) {
+    // isLoadingMoreRef: 상태 업데이트 비동기 특성으로 인한 중복 호출 방지
+    if (!hasMore || !cursor || isLoadingMoreRef.current) {
       return;
     }
+    isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
 
     const container = scrollContainerRef.current;
@@ -244,7 +261,7 @@ const DmChatPage = () => {
       setCursor(nextCursor ?? null);
       setHasMore(hasNextPage ?? false);
 
-      // 스크롤 위치 보정
+      // 스크롤 위치 보정: 기존에 보던 메시지가 유지되도록
       setTimeout(() => {
         if (container) {
           container.scrollTop = container.scrollHeight - prevScrollHeight;
@@ -253,15 +270,17 @@ const DmChatPage = () => {
     } catch (err) {
       console.error('이전 메시지 로드 실패:', err);
     } finally {
+      isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [roomId, cursor, hasMore, isLoadingMore]);
+  }, [roomId, cursor, hasMore]);
 
   // 언읽음 모드: 아래 방향 페이징 (더 많은 언읽음 메시지 로드)
   const loadMoreUnread = useCallback(async () => {
-    if (!hasMoreUnread || !forwardCursor || isLoadingMoreUnread) {
+    if (!hasMoreUnread || !forwardCursor || isLoadingMoreUnreadRef.current) {
       return;
     }
+    isLoadingMoreUnreadRef.current = true;
     setIsLoadingMoreUnread(true);
     try {
       const response = await getUnreadChatMessages(roomId, forwardCursor, 50);
@@ -282,11 +301,12 @@ const DmChatPage = () => {
     } catch (err) {
       console.error('이후 메시지 로드 실패:', err);
     } finally {
+      isLoadingMoreUnreadRef.current = false;
       setIsLoadingMoreUnread(false);
     }
-  }, [roomId, forwardCursor, hasMoreUnread, isLoadingMoreUnread]);
+  }, [roomId, forwardCursor, hasMoreUnread]);
 
-  // 상단 무한 스크롤
+  // 상단/하단 무한 스크롤 핸들러
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) {
@@ -294,12 +314,15 @@ const DmChatPage = () => {
     }
 
     const handleScroll = () => {
-      // 상단: 이전 이력 로드 (backward)
-      if (container.scrollTop < 80 && hasMore && !isLoadingMore) {
+      // 초기 포지셔닝 중에는 핸들러 비활성화 (premature loadMore 방지)
+      if (isInitializingRef.current) { return; }
+
+      // 상단 80px 이내: 이전 이력 로드 (backward)
+      if (container.scrollTop < 80 && hasMore && !isLoadingMoreRef.current) {
         loadMoreMessages();
       }
-      // 하단: 언읽음 모드에서 더 많은 언읽음 메시지 로드 (forward)
-      if (isUnreadMode && hasMoreUnread && !isLoadingMoreUnread) {
+      // 하단 80px 이내: 언읽음 모드에서 더 많은 언읽음 메시지 로드 (forward)
+      if (isUnreadMode && hasMoreUnread && !isLoadingMoreUnreadRef.current) {
         const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
         if (distanceFromBottom < 80) {
           loadMoreUnread();
@@ -309,7 +332,7 @@ const DmChatPage = () => {
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoadingMore, loadMoreMessages, isUnreadMode, hasMoreUnread, isLoadingMoreUnread, loadMoreUnread]);
+  }, [hasMore, hasMoreUnread, isUnreadMode, loadMoreMessages, loadMoreUnread]);
 
   // 텍스트 메시지 전송
   const handleSendText = useCallback(() => {
@@ -520,7 +543,6 @@ const DmChatPage = () => {
                 <Spinner size="small" />
               </div>
             )}
-            <div ref={messagesTopRef} />
 
             {messages.map((msg, idx) => {
               const isMine = msg.senderId === myUserId;
