@@ -102,6 +102,7 @@ export const ChatProvider = ({ children }) => {
 
         // 채팅방 업데이트 구독
         client.subscribe('/user/queue/chat-room-updates', (message) => {
+          console.log('[WS] chat-room-updates 수신:', message.body);
           const body = JSON.parse(message.body);
           if (body.senderId === myUserId) {
             return;
