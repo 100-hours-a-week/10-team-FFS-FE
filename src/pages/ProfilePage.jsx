@@ -279,13 +279,15 @@ const ProfilePage = () => {
             <div className="my-page__info-header">
               <h2 className="my-page__nickname">{profile.nickname}</h2>
               {!profile.isMe && (
-                <button
-                  className={isFollowing ? 'my-page__btn my-page__btn--follow-inline --unfollowing' : 'my-page__btn my-page__btn--follow-inline --following'}
+                <Button
+                  size="small"
+                  variant={isFollowing ? 'secondary' : 'primary'}
                   onClick={handleToggleFollow}
                   disabled={isFollowLoading}
+                  style={{ marginRight: 'var(--spacing-xs)' }}
                 >
                   {isFollowLoading ? '' : isFollowing ? '팔로잉' : '팔로우'}
-                </button>
+                </Button>
               )}
             </div>
             <div className="my-page__stats">
