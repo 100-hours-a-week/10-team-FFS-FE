@@ -228,34 +228,35 @@
   border-radius: 0 !important;
 }
 
-/* 이미지 그리드: 가로 정렬 */
+/* 이미지 그리드: 고정 너비 가로 정렬 */
 .dm-chat-page__bubble-images {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   gap: 4px;
+  width: 248px;
 }
 
-/* 이미지 공통: 동일한 정사각형 크기 */
+/* 이미지 공통: flex로 균등 분배, 고정 높이 */
 .dm-chat-page__bubble-image {
-  width: 110px;
-  height: 110px;
+  flex: 1;
+  min-width: 0;
+  height: 120px;
   border-radius: var(--radius-md);
   object-fit: cover;
   cursor: pointer;
   display: block;
-  flex-shrink: 0;
 }
 
-/* 1장일 때 더 크게 */
+/* 1장일 때 더 높게 */
 .dm-chat-page__bubble-images--1 .dm-chat-page__bubble-image {
-  width: 180px;
-  height: 180px;
+  height: 200px;
 }
 
 .dm-chat-page__bubble-image-error {
-  width: 110px;
-  height: 110px;
+  flex: 1;
+  min-width: 0;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -264,7 +265,6 @@
   color: var(--color-text-tertiary);
   font-size: var(--font-size-xl);
   border: 1px solid var(--color-border);
-  flex-shrink: 0;
 }
 
 /* ===== 이미지 전체보기 모달 ===== */
@@ -301,6 +301,33 @@
   max-height: 82vh;
   object-fit: contain;
   border-radius: var(--radius-md);
+}
+
+.dm-chat-page__image-modal-prev,
+.dm-chat-page__image-modal-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.dm-chat-page__image-modal-prev {
+  left: 16px;
+}
+
+.dm-chat-page__image-modal-next {
+  right: 16px;
 }
 
 /* 피드 메시지 버블 - 배경/패딩 제거 */
@@ -372,14 +399,6 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-/* "피드를 보냈습니다" 캡션 */
-.dm-chat-page__bubble-feed-caption {
-  display: block;
-  padding: 4px 10px 10px;
-  font-size: 11px;
-  color: var(--color-text-tertiary);
 }
 
 /* 피드 카드 로딩 스켈레톤 */
