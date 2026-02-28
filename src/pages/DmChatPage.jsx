@@ -4,13 +4,12 @@ import { Spinner, AlertModal } from '../components/common';
 import { useChatContext } from '../contexts/ChatContext';
 import {
   getChatMessages,
-  getUnreadChatMessages,
   leaveChatRoom,
   markChatAsRead,
   getPresignedUrls,
   uploadToS3,
 } from '../api';
-import { IoChevronBack, IoEllipsisHorizontal, IoImageOutline, IoPaperPlane } from 'react-icons/io5';
+import { IoChevronBack, IoEllipsisHorizontal, IoImageOutline, IoPaperPlane, IoChevronDown } from 'react-icons/io5';
 import './DmChatPage.css';
 
 const MAX_IMAGES = 3;
@@ -53,27 +52,31 @@ const DmChatPage = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { subscribeToRoom, sendChatMessage, myUserId, fetchUnreadStatus, latestMessageError, setActiveRoomId } = useChatContext();
+  const {
+    subscribeToRoom,
+    sendChatMessage,
+    myUserId,
+    fetchUnreadStatus,
+    latestMessageError,
+    setActiveRoomId,
+    stompConnected,
+  } = useChatContext();
 
   const opponent = location.state?.opponent ?? null;
-  const initialUnreadCount = location.state?.unreadCount ?? 0;
 
+  // ── 메시지 / 페이징 상태 ────────────────────────────────────
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
-
-  // 언읽음 모드: 아래 방향(forward) 페이징 + 위 방향(backward) 이력 페이징 이중 관리
-  const [isUnreadMode, setIsUnreadMode] = useState(false);
-  const [forwardCursor, setForwardCursor] = useState(null);
-  const [hasMoreUnread, setHasMoreUnread] = useState(false);
-
-  // UI 상태
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isLoadingMoreUnread, setIsLoadingMoreUnread] = useState(false);
+
+  // ── UI 상태 ─────────────────────────────────────────────────
   const [inputText, setInputText] = useState('');
   const [showMenu, setShowMenu] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  // 스크롤이 위에 있을 때 새 메시지 수신 시 배지로 표시
+  const [newMessageCount, setNewMessageCount] = useState(0);
 
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -82,159 +85,38 @@ const DmChatPage = () => {
   const fileInputRef = useRef(null);
 
   // 초기 스크롤 포지셔닝 중 scroll 핸들러를 차단하는 플래그
-  // smooth 애니메이션 scroll 이벤트가 loadMoreMessages를 조기 호출하는 버그 방지
   const isInitializingRef = useRef(false);
-
-  // 동기적 로딩 가드: 상태 업데이트 비동기 특성으로 인한 race condition 방지
+  // 동기적 로딩 가드: 중복 호출 방지
   const isLoadingMoreRef = useRef(false);
-  const isLoadingMoreUnreadRef = useRef(false);
 
-  // 새 메시지 수신 시 smooth 스크롤 (사용자가 이미 하단 근처에 있을 때)
+  // ── 유틸 ────────────────────────────────────────────────────
+
+  // 스크롤이 하단 100px 이내인지 확인
+  const checkIfNearBottom = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return true;
+    }
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    return distanceFromBottom < 100;
+  }, []);
+
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, []);
 
-  // 초기 메시지 로드
-  useEffect(() => {
-    const loadInitial = async () => {
-      setIsLoading(true);
-      try {
-        if (initialUnreadCount > 0) {
-          // 언읽음 모드: ASC(오래된순) — 위쪽은 이력(backward), 아래쪽은 더 많은 언읽음(forward)
-          const response = await getUnreadChatMessages(roomId, null, 50);
-          const { messages: msgs, nextCursor, hasNextPage } = response.data;
-          const safeMsgs = msgs ?? [];
-          const ordered = [...safeMsgs]; // ASC 그대로 사용
-
-          setMessages(ordered.map(m => ({ ...m, status: 'sent' })));
-          setIsUnreadMode(true);
-          setForwardCursor(nextCursor ?? null);
-          setHasMoreUnread(hasNextPage ?? false);
-
-          // 이력 backward 페이징: 가장 오래된 언읽음 메시지 이전 기록 조회용 커서
-          if (ordered.length > 0) {
-            setCursor(ordered[0].messageId);
-            setHasMore(true);
-          }
-
-          // 마지막 메시지 읽음 처리
-          if (ordered.length > 0) {
-            const lastId = ordered[ordered.length - 1].messageId;
-            try {
-              await markChatAsRead(roomId, lastId);
-              fetchUnreadStatus();
-            } catch (_) { /* 읽음 처리 실패는 무시 */ }
-          }
-        } else {
-          // 일반 모드: DESC → reverse → 최신이 아래
-          const response = await getChatMessages(roomId, null, 50);
-          const { messages: msgs, nextCursor, hasNextPage } = response.data;
-          const safeMsgs = msgs ?? [];
-          const ordered = [...safeMsgs].reverse();
-
-          setMessages(ordered.map(m => ({ ...m, status: 'sent' })));
-          setCursor(nextCursor ?? null);
-          setHasMore(hasNextPage ?? false);
-
-          // 마지막 메시지 읽음 처리
-          if (ordered.length > 0) {
-            const lastId = ordered[ordered.length - 1].messageId;
-            try {
-              await markChatAsRead(roomId, lastId);
-              fetchUnreadStatus();
-            } catch (_) { /* 읽음 처리 실패는 무시 */ }
-          }
-        }
-      } catch (err) {
-        console.error('메시지 로드 실패:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadInitial();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
-
-  // 로드 후 초기 스크롤 (1회)
-  // - 일반 모드: 최신 메시지(하단)로 즉시 이동
-  // - 언읽음 모드: 첫 번째 언읽음 메시지가 최상단에 보이도록 scrollTop = 0
-  // ※ isInitializingRef로 포지셔닝 중 scroll 핸들러를 차단 → loadMoreMessages 조기 호출 방지
-  useEffect(() => {
-    if (!isLoading && messages.length > 0) {
-      const container = scrollContainerRef.current;
-      if (!container) { return; }
-
-      isInitializingRef.current = true;
-
-      if (isUnreadMode) {
-        container.scrollTop = 0;
-      } else {
-        // instant 스크롤: smooth 애니메이션 중 scroll 이벤트 발생 방지
-        container.scrollTop = container.scrollHeight;
-      }
-
-      // scrollTop 변경으로 발생하는 동기 scroll 이벤트 처리 후 가드 해제
-      setTimeout(() => {
-        isInitializingRef.current = false;
-      }, 0);
-    }
-  // messages.length는 의도적으로 제외: 로드 완료 시에만 1회 실행
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isUnreadMode]);
-
-  // STOMP 구독
-  useEffect(() => {
-    const sub = subscribeToRoom(roomId, handleNewMessage);
-    subscriptionRef.current = sub;
-
-    return () => {
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, subscribeToRoom]);
-
-  // 채팅방 진입/이탈 시 activeRoomId 등록 — ChatContext의 red-dot 억제에 활용
-  useEffect(() => {
-    setActiveRoomId(Number(roomId));
-    return () => {
-      setActiveRoomId(null);
-    };
-  }, [roomId, setActiveRoomId]);
-
-  // STOMP 에러 수신 시 해당 메시지를 즉시 실패 상태로 전환
-  useEffect(() => {
-    if (!latestMessageError) {
-      return;
-    }
-    const { clientMessageId } = latestMessageError;
-    if (!clientMessageId) {
-      return;
-    }
-    // 5초 타임아웃이 남아있으면 클리어 후 즉시 실패 처리
-    if (pendingMessagesRef.current[clientMessageId]) {
-      clearTimeout(pendingMessagesRef.current[clientMessageId]);
-      delete pendingMessagesRef.current[clientMessageId];
-    }
-    setMessages(prev =>
-      prev.map(m =>
-        m.clientMessageId === clientMessageId ? { ...m, status: 'failed' } : m
-      )
-    );
-  }, [latestMessageError]);
-
-  // 새 메시지 수신 핸들러
+  // ── 새 메시지 수신 핸들러 (구독 effect보다 먼저 정의) ────────
   const handleNewMessage = useCallback((msg) => {
     const clientId = msg.clientMessageId;
 
     setMessages(prev => {
-      // 이미 clientMessageId로 낙관적 추가된 메시지면 교체
-      const idx = clientId ? prev.findIndex(m => m.clientMessageId === clientId) : -1;
+      // 낙관적 메시지(clientMessageId 일치)가 있으면 교체
+      const idx = clientId
+        ? prev.findIndex(m => m.clientMessageId === clientId)
+        : -1;
       if (idx !== -1) {
         const updated = [...prev];
         updated[idx] = { ...msg, status: 'sent' };
@@ -254,12 +136,117 @@ const DmChatPage = () => {
       markChatAsRead(roomId, msg.messageId).catch(() => {});
     }
 
-    scrollToBottom();
-  }, [roomId, scrollToBottom]);
+    // 하단 근접 시 자동 스크롤, 아니면 배지 카운트 증가
+    if (checkIfNearBottom()) {
+      scrollToBottom();
+    } else if (msg.senderId !== myUserId) {
+      setNewMessageCount(prev => prev + 1);
+    }
+  }, [roomId, scrollToBottom, checkIfNearBottom, myUserId]);
 
-  // 이전 메시지 더보기 (상단 스크롤 시 backward 페이징)
+  // ── 초기 메시지 로드 (항상 DESC → reverse, 최신이 아래) ─────
+  useEffect(() => {
+    const loadInitial = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getChatMessages(roomId, null, 50);
+        const { messages: msgs, nextCursor, hasNextPage } = response.data;
+        const ordered = [...(msgs ?? [])].reverse();
+
+        setMessages(ordered.map(m => ({ ...m, status: 'sent' })));
+        setCursor(nextCursor ?? null);
+        setHasMore(hasNextPage ?? false);
+
+        // 마지막 메시지 읽음 처리
+        if (ordered.length > 0) {
+          const lastId = ordered[ordered.length - 1].messageId;
+          try {
+            await markChatAsRead(roomId, lastId);
+            fetchUnreadStatus();
+          } catch (_) { /* 읽음 처리 실패는 무시 */ }
+        }
+      } catch (err) {
+        console.error('메시지 로드 실패:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitial();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
+
+  // ── 로드 완료 후 즉시 하단 스크롤 ─────────────────────────────
+  useEffect(() => {
+    if (!isLoading) {
+      const container = scrollContainerRef.current;
+      if (!container) {
+        return;
+      }
+      isInitializingRef.current = true;
+      container.scrollTop = container.scrollHeight;
+      setTimeout(() => {
+        isInitializingRef.current = false;
+      }, 0);
+    }
+  // isLoading이 false로 바뀔 때 1회만 실행
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+
+  // ── STOMP 연결/재연결 시 방 구독 (재)등록 ──────────────────────
+  // stompConnected가 true가 될 때마다 실행 → 재연결 후 구독 재등록 보장
+  useEffect(() => {
+    if (!stompConnected) {
+      return;
+    }
+
+    // 기존 구독 해제 후 재구독
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+      subscriptionRef.current = null;
+    }
+
+    const sub = subscribeToRoom(roomId, handleNewMessage);
+    subscriptionRef.current = sub;
+
+    return () => {
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
+  }, [roomId, stompConnected, subscribeToRoom, handleNewMessage]);
+
+  // ── 채팅방 진입/이탈 시 activeRoomId 등록 ─────────────────────
+  useEffect(() => {
+    setActiveRoomId(Number(roomId));
+    return () => {
+      setActiveRoomId(null);
+    };
+  }, [roomId, setActiveRoomId]);
+
+  // ── STOMP 에러 수신 시 해당 메시지를 즉시 실패 상태로 전환 ─────
+  useEffect(() => {
+    if (!latestMessageError) {
+      return;
+    }
+    const { clientMessageId } = latestMessageError;
+    if (!clientMessageId) {
+      return;
+    }
+    if (pendingMessagesRef.current[clientMessageId]) {
+      clearTimeout(pendingMessagesRef.current[clientMessageId]);
+      delete pendingMessagesRef.current[clientMessageId];
+    }
+    setMessages(prev =>
+      prev.map(m =>
+        m.clientMessageId === clientMessageId ? { ...m, status: 'failed' } : m
+      )
+    );
+  }, [latestMessageError]);
+
+  // ── 이전 메시지 더보기 (상단 스크롤 시 backward 페이징) ─────────
   const loadMoreMessages = useCallback(async () => {
-    // isLoadingMoreRef: 상태 업데이트 비동기 특성으로 인한 중복 호출 방지
     if (!hasMore || !cursor || isLoadingMoreRef.current) {
       return;
     }
@@ -295,38 +282,7 @@ const DmChatPage = () => {
     }
   }, [roomId, cursor, hasMore]);
 
-  // 언읽음 모드: 아래 방향 페이징 (더 많은 언읽음 메시지 로드)
-  const loadMoreUnread = useCallback(async () => {
-    if (!hasMoreUnread || !forwardCursor || isLoadingMoreUnreadRef.current) {
-      return;
-    }
-    isLoadingMoreUnreadRef.current = true;
-    setIsLoadingMoreUnread(true);
-    try {
-      const response = await getUnreadChatMessages(roomId, forwardCursor, 50);
-      const { messages: msgs, nextCursor, hasNextPage } = response.data;
-      const safeMsgs = msgs ?? [];
-
-      setMessages(prev => [
-        ...prev,
-        ...safeMsgs.map(m => ({ ...m, status: 'sent' })),
-      ]);
-      setForwardCursor(nextCursor ?? null);
-      setHasMoreUnread(hasNextPage ?? false);
-
-      if (safeMsgs.length > 0) {
-        const lastId = safeMsgs[safeMsgs.length - 1].messageId;
-        markChatAsRead(roomId, lastId).catch(() => {});
-      }
-    } catch (err) {
-      console.error('이후 메시지 로드 실패:', err);
-    } finally {
-      isLoadingMoreUnreadRef.current = false;
-      setIsLoadingMoreUnread(false);
-    }
-  }, [roomId, forwardCursor, hasMoreUnread]);
-
-  // 상단/하단 무한 스크롤 핸들러
+  // ── 스크롤 핸들러 ───────────────────────────────────────────
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) {
@@ -334,27 +290,26 @@ const DmChatPage = () => {
     }
 
     const handleScroll = () => {
-      // 초기 포지셔닝 중에는 핸들러 비활성화 (premature loadMore 방지)
-      if (isInitializingRef.current) { return; }
+      if (isInitializingRef.current) {
+        return;
+      }
 
-      // 상단 80px 이내: 이전 이력 로드 (backward)
+      // 하단 도달 시 배지 초기화
+      if (checkIfNearBottom()) {
+        setNewMessageCount(0);
+      }
+
+      // 상단 80px 이내: 이전 이력 로드
       if (container.scrollTop < 80 && hasMore && !isLoadingMoreRef.current) {
         loadMoreMessages();
-      }
-      // 하단 80px 이내: 언읽음 모드에서 더 많은 언읽음 메시지 로드 (forward)
-      if (isUnreadMode && hasMoreUnread && !isLoadingMoreUnreadRef.current) {
-        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-        if (distanceFromBottom < 80) {
-          loadMoreUnread();
-        }
       }
     };
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [hasMore, hasMoreUnread, isUnreadMode, loadMoreMessages, loadMoreUnread]);
+  }, [hasMore, loadMoreMessages, checkIfNearBottom]);
 
-  // 텍스트 메시지 전송
+  // ── 텍스트 메시지 전송 ──────────────────────────────────────
   const handleSendText = useCallback(() => {
     const text = inputText.trim();
     if (!text) {
@@ -363,7 +318,6 @@ const DmChatPage = () => {
 
     const clientMessageId = crypto.randomUUID();
 
-    // 낙관적 UI 추가
     const optimistic = {
       messageId: null,
       clientMessageId,
@@ -378,14 +332,12 @@ const DmChatPage = () => {
     scrollToBottom();
 
     try {
-      // STOMP SEND (미연결 시 throw)
       sendChatMessage(roomId, {
         type: 'TEXT',
         content: text,
         clientMessageId,
       });
 
-      // 5초 타임아웃 → 전송 실패
       const timeout = setTimeout(() => {
         setMessages(prev =>
           prev.map(m =>
@@ -396,7 +348,6 @@ const DmChatPage = () => {
       }, SEND_TIMEOUT);
       pendingMessagesRef.current[clientMessageId] = timeout;
     } catch (_) {
-      // STOMP 미연결 시 즉시 실패 처리
       setMessages(prev =>
         prev.map(m =>
           m.clientMessageId === clientMessageId ? { ...m, status: 'failed' } : m
@@ -405,37 +356,45 @@ const DmChatPage = () => {
     }
   }, [inputText, myUserId, roomId, sendChatMessage, scrollToBottom]);
 
-  // 이미지 전송
+  // ── 이미지 전송 ─────────────────────────────────────────────
   const handleImageSelect = useCallback(async (e) => {
     const files = Array.from(e.target.files).slice(0, MAX_IMAGES);
     if (files.length === 0) {
       return;
     }
 
+    const clientMessageId = crypto.randomUUID();
+
+    // S3 업로드 전 sending 상태 낙관적 표시 (_mediaFileIds는 업로드 후 채움)
+    const optimistic = {
+      messageId: null,
+      clientMessageId,
+      senderId: myUserId,
+      type: 'IMAGE',
+      images: files.map(f => ({ imageUrl: URL.createObjectURL(f) })),
+      createdAt: new Date().toISOString(),
+      status: 'sending',
+      _mediaFileIds: null,
+    };
+    setMessages(prev => [...prev, optimistic]);
+    scrollToBottom();
+
     try {
-      // Presigned URL 발급
       const fileInfos = files.map(f => ({ name: f.name, type: f.type }));
       const presignedResponse = await getPresignedUrls('CHAT', fileInfos);
       const urlInfos = presignedResponse.data;
 
-      // S3 업로드
       await Promise.all(urlInfos.map((info, i) => uploadToS3(info.presignedUrl, files[i])));
       const mediaFileIds = urlInfos.map(info => info.fileId);
 
-      const clientMessageId = crypto.randomUUID();
-
-      // 낙관적 UI (이미지 미리보기)
-      const optimistic = {
-        messageId: null,
-        clientMessageId,
-        senderId: myUserId,
-        type: 'IMAGE',
-        images: files.map(f => ({ imageUrl: URL.createObjectURL(f) })),
-        createdAt: new Date().toISOString(),
-        status: 'sending',
-      };
-      setMessages(prev => [...prev, optimistic]);
-      scrollToBottom();
+      // 업로드 완료 후 재전송에 쓸 mediaFileIds 저장
+      setMessages(prev =>
+        prev.map(m =>
+          m.clientMessageId === clientMessageId
+            ? { ...m, _mediaFileIds: mediaFileIds }
+            : m
+        )
+      );
 
       try {
         sendChatMessage(roomId, {
@@ -454,7 +413,6 @@ const DmChatPage = () => {
         }, SEND_TIMEOUT);
         pendingMessagesRef.current[clientMessageId] = timeout;
       } catch (_) {
-        // STOMP 미연결 시 즉시 실패 처리
         setMessages(prev =>
           prev.map(m =>
             m.clientMessageId === clientMessageId ? { ...m, status: 'failed' } : m
@@ -463,30 +421,80 @@ const DmChatPage = () => {
       }
     } catch (err) {
       console.error('이미지 전송 실패 (업로드 오류):', err);
+      // S3 업로드 실패 시 즉시 failed 처리
+      setMessages(prev =>
+        prev.map(m =>
+          m.clientMessageId === clientMessageId ? { ...m, status: 'failed' } : m
+        )
+      );
     } finally {
-      // input 초기화
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   }, [myUserId, roomId, sendChatMessage, scrollToBottom]);
 
-  // 재전송
+  // ── 재전송 ──────────────────────────────────────────────────
   const handleRetry = useCallback((msg) => {
     if (msg.type === 'TEXT') {
       setMessages(prev => prev.filter(m => m.clientMessageId !== msg.clientMessageId));
       setInputText(msg.content || '');
-    } else {
-      setMessages(prev => prev.filter(m => m.clientMessageId !== msg.clientMessageId));
-    }
-  }, []);
+    } else if (msg.type === 'IMAGE') {
+      const mediaFileIds = msg._mediaFileIds;
+      if (!mediaFileIds || mediaFileIds.length === 0) {
+        // S3 업로드 전 실패한 경우 → 삭제만 (재업로드 필요)
+        setMessages(prev => prev.filter(m => m.clientMessageId !== msg.clientMessageId));
+        return;
+      }
 
-  // 실패 메시지 삭제
+      // 새 clientMessageId로 STOMP 재전송
+      const newClientMessageId = crypto.randomUUID();
+      setMessages(prev =>
+        prev.map(m =>
+          m.clientMessageId === msg.clientMessageId
+            ? { ...m, clientMessageId: newClientMessageId, status: 'sending' }
+            : m
+        )
+      );
+
+      try {
+        sendChatMessage(roomId, {
+          type: 'IMAGE',
+          mediaFileIds,
+          clientMessageId: newClientMessageId,
+        });
+
+        const timeout = setTimeout(() => {
+          setMessages(prev =>
+            prev.map(m =>
+              m.clientMessageId === newClientMessageId ? { ...m, status: 'failed' } : m
+            )
+          );
+          delete pendingMessagesRef.current[newClientMessageId];
+        }, SEND_TIMEOUT);
+        pendingMessagesRef.current[newClientMessageId] = timeout;
+      } catch (_) {
+        setMessages(prev =>
+          prev.map(m =>
+            m.clientMessageId === newClientMessageId ? { ...m, status: 'failed' } : m
+          )
+        );
+      }
+    }
+  }, [roomId, sendChatMessage]);
+
+  // ── 실패 메시지 삭제 ─────────────────────────────────────────
   const handleDeleteFailed = useCallback((clientMessageId) => {
     setMessages(prev => prev.filter(m => m.clientMessageId !== clientMessageId));
   }, []);
 
-  // 채팅방 나가기
+  // ── 새 메시지 배지 클릭: 하단 스크롤 + 카운트 초기화 ───────────
+  const handleNewMessageBadgeClick = useCallback(() => {
+    setNewMessageCount(0);
+    scrollToBottom();
+  }, [scrollToBottom]);
+
+  // ── 채팅방 나가기 ──────────────────────────────────────────
   const handleLeave = async () => {
     try {
       await leaveChatRoom(roomId);
@@ -546,103 +554,109 @@ const DmChatPage = () => {
         </div>
       </div>
 
-      {/* 메시지 영역 */}
-      <div
-        className="dm-chat-page__messages"
-        ref={scrollContainerRef}
-        onClick={() => setShowMenu(false)}
-      >
-        {isLoading ? (
-          <div className="dm-chat-page__loading">
-            <Spinner size="large" />
-          </div>
-        ) : (
-          <>
-            {isLoadingMore && (
-              <div className="dm-chat-page__loading-more">
-                <Spinner size="small" />
-              </div>
-            )}
-
-            {messages.map((msg, idx) => {
-              const isMine = msg.senderId === myUserId;
-              return (
-                <div
-                  key={msg.messageId ?? msg.clientMessageId ?? idx}
-                  className={`dm-chat-page__bubble-wrap ${isMine ? 'dm-chat-page__bubble-wrap--mine' : 'dm-chat-page__bubble-wrap--theirs'}`}
-                >
-                  <div
-                    className={`dm-chat-page__bubble ${isMine ? 'dm-chat-page__bubble--mine' : 'dm-chat-page__bubble--theirs'}`}
-                  >
-                    {/* 메시지 타입별 렌더링 */}
-                    {msg.type === 'TEXT' && (
-                      <span className="dm-chat-page__bubble-text">{msg.content}</span>
-                    )}
-                    {msg.type === 'IMAGE' && (
-                      <div className="dm-chat-page__bubble-images">
-                        {(msg.images || []).map((img, i) => (
-                          <ChatImage
-                            key={i}
-                            src={img.imageUrl}
-                            alt={`이미지 ${i + 1}`}
-                            className="dm-chat-page__bubble-image"
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {msg.type === 'FEED' && (
-                      <div
-                        className="dm-chat-page__bubble-feed"
-                        onClick={() => msg.relatedFeedId && navigate(`/feed/${msg.relatedFeedId}`)}
-                      >
-                        {msg.feedThumbnailUrl && (
-                          <img
-                            src={msg.feedThumbnailUrl}
-                            alt="피드"
-                            className="dm-chat-page__bubble-feed-thumb"
-                          />
-                        )}
-                        <span className="dm-chat-page__bubble-feed-label">[피드]</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className={`dm-chat-page__bubble-meta ${isMine ? 'dm-chat-page__bubble-meta--mine' : ''}`}>
-                    {/* 전송 상태 */}
-                    {msg.status === 'sending' && (
-                      <span className="dm-chat-page__status dm-chat-page__status--sending">전송 중</span>
-                    )}
-                    {msg.status === 'failed' && (
-                      <div className="dm-chat-page__status dm-chat-page__status--failed">
-                        <button
-                          className="dm-chat-page__retry-btn"
-                          onClick={() => handleRetry(msg)}
-                        >
-                          재전송
-                        </button>
-                        <button
-                          className="dm-chat-page__delete-btn"
-                          onClick={() => handleDeleteFailed(msg.clientMessageId)}
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    )}
-                    <span className="dm-chat-page__time">
-                      {formatMessageTime(msg.createdAt)}
-                    </span>
-                  </div>
+      {/* 메시지 + 배지 래퍼 */}
+      <div className="dm-chat-page__messages-wrapper">
+        <div
+          className="dm-chat-page__messages"
+          ref={scrollContainerRef}
+          onClick={() => setShowMenu(false)}
+        >
+          {isLoading ? (
+            <div className="dm-chat-page__loading">
+              <Spinner size="large" />
+            </div>
+          ) : (
+            <>
+              {isLoadingMore && (
+                <div className="dm-chat-page__loading-more">
+                  <Spinner size="small" />
                 </div>
-              );
-            })}
+              )}
 
-            {isLoadingMoreUnread && (
-              <div className="dm-chat-page__loading-more">
-                <Spinner size="small" />
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </>
+              {messages.map((msg, idx) => {
+                const isMine = msg.senderId === myUserId;
+                return (
+                  <div
+                    key={msg.messageId ?? msg.clientMessageId ?? idx}
+                    className={`dm-chat-page__bubble-wrap ${isMine ? 'dm-chat-page__bubble-wrap--mine' : 'dm-chat-page__bubble-wrap--theirs'}`}
+                  >
+                    <div
+                      className={`dm-chat-page__bubble ${isMine ? 'dm-chat-page__bubble--mine' : 'dm-chat-page__bubble--theirs'}`}
+                    >
+                      {msg.type === 'TEXT' && (
+                        <span className="dm-chat-page__bubble-text">{msg.content}</span>
+                      )}
+                      {msg.type === 'IMAGE' && (
+                        <div className="dm-chat-page__bubble-images">
+                          {(msg.images || []).map((img, i) => (
+                            <ChatImage
+                              key={i}
+                              src={img.imageUrl}
+                              alt={`이미지 ${i + 1}`}
+                              className="dm-chat-page__bubble-image"
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {msg.type === 'FEED' && (
+                        <div
+                          className="dm-chat-page__bubble-feed"
+                          onClick={() => msg.relatedFeedId && navigate(`/feed/${msg.relatedFeedId}`)}
+                        >
+                          {msg.feedThumbnailUrl && (
+                            <img
+                              src={msg.feedThumbnailUrl}
+                              alt="피드"
+                              className="dm-chat-page__bubble-feed-thumb"
+                            />
+                          )}
+                          <span className="dm-chat-page__bubble-feed-label">[피드]</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={`dm-chat-page__bubble-meta ${isMine ? 'dm-chat-page__bubble-meta--mine' : ''}`}>
+                      {msg.status === 'sending' && (
+                        <span className="dm-chat-page__status dm-chat-page__status--sending">전송 중</span>
+                      )}
+                      {msg.status === 'failed' && (
+                        <div className="dm-chat-page__status dm-chat-page__status--failed">
+                          <button
+                            className="dm-chat-page__retry-btn"
+                            onClick={() => handleRetry(msg)}
+                          >
+                            재전송
+                          </button>
+                          <button
+                            className="dm-chat-page__delete-btn"
+                            onClick={() => handleDeleteFailed(msg.clientMessageId)}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      )}
+                      <span className="dm-chat-page__time">
+                        {formatMessageTime(msg.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
+
+        {/* 새 메시지 배지: 스크롤이 위에 있을 때 상대방 메시지 수신 시 표시 */}
+        {newMessageCount > 0 && (
+          <button
+            className="dm-chat-page__new-message-badge"
+            onClick={handleNewMessageBadgeClick}
+          >
+            <span>새 메시지 {newMessageCount}개</span>
+            <IoChevronDown size={14} />
+          </button>
         )}
       </div>
 

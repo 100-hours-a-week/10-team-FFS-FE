@@ -18,6 +18,7 @@ export const ChatProvider = ({ children }) => {
   const [hasUnread, setHasUnread] = useState(false);
   const [latestRoomUpdate, setLatestRoomUpdate] = useState(null);
   const [latestMessageError, setLatestMessageError] = useState(null);
+  const [stompConnected, setStompConnected] = useState(false);
   const stompClientRef = useRef(null);
   const subscriptionsRef = useRef({});
   // ref 사용: STOMP 클로저 안에서 최신값을 읽어야 하므로 state 대신 ref
@@ -97,6 +98,7 @@ export const ChatProvider = ({ children }) => {
       heartbeatIncoming: 30000,
       heartbeatOutgoing: 30000,
       onConnect: () => {
+        setStompConnected(true);
         // 초기 언읽음 상태 조회
         fetchUnreadStatus();
 
@@ -126,6 +128,7 @@ export const ChatProvider = ({ children }) => {
         });
       },
       onDisconnect: () => {
+        setStompConnected(false);
         console.log('STOMP 연결 해제');
       },
       onStompError: (frame) => {
@@ -160,6 +163,7 @@ export const ChatProvider = ({ children }) => {
     clearUnread,
     fetchUnreadStatus,
     setActiveRoomId,
+    stompConnected,
   };
 
   return (
