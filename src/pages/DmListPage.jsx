@@ -15,7 +15,7 @@ const getLastMessagePreview = (room) => {
     return '사진을 보냈습니다';
   }
   if (room.lastMessage.type === 'FEED') {
-    return '[피드]';
+    return '피드를 보냈습니다';
   }
   return room.lastMessage.content || '';
 };
