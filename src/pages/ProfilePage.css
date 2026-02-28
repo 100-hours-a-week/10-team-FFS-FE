@@ -44,15 +44,36 @@
   flex: 1;
 }
 
+/* 닉네임 + 팔로우 버튼을 한 줄에 배치 */
+.my-page__info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+}
+
 .my-page__nickname {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: 0;
 }
 
 .my-page__stats {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+}
+
+/* 닉네임 줄 오른쪽에 배치되는 팔로우/팔로잉 버튼 */
+.my-page__btn--follow-inline {
+  flex: none;
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  min-width: 64px;
 }
 
 /* 버튼 영역 */
