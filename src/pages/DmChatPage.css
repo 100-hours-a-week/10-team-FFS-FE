@@ -126,14 +126,45 @@
   color: var(--color-error);
 }
 
+/* ===== 메시지 래퍼 (배지 위치 기준점) ===== */
+.dm-chat-page__messages-wrapper {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ===== 메시지 영역 ===== */
 .dm-chat-page__messages {
-  flex: 1;
+  height: 100%;
   overflow-y: auto;
   padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+}
+
+/* ===== 새 메시지 배지 ===== */
+.dm-chat-page__new-message-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 7px 16px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-overlay);
+  white-space: nowrap;
 }
 
 .dm-chat-page__loading {
