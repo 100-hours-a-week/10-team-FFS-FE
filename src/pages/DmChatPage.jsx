@@ -8,6 +8,7 @@ import {
   markChatAsRead,
   getPresignedUrls,
   uploadToS3,
+  getFeedDetail,
 } from '../api';
 import { IoChevronBack, IoEllipsisHorizontal, IoImageOutline, IoPaperPlane, IoChevronDown } from 'react-icons/io5';
 import './DmChatPage.css';
@@ -16,7 +17,7 @@ const MAX_IMAGES = 3;
 const SEND_TIMEOUT = 5000;
 
 // 이미지 로드 실패 시 X placeholder 표시
-const ChatImage = ({ src, alt, className }) => {
+const ChatImage = ({ src, alt, className, onClick }) => {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
@@ -31,7 +32,75 @@ const ChatImage = ({ src, alt, className }) => {
       alt={alt}
       className={className}
       onError={() => setFailed(true)}
+      onClick={onClick}
     />
+  );
+};
+
+// FEED 메시지 미리보기 카드 (feedId로 피드 정보 fetch)
+const FeedPreviewBubble = ({ feedId, onNavigate }) => {
+  const [preview, setPreview] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!feedId) {
+      setIsLoading(false);
+      return;
+    }
+    getFeedDetail(feedId)
+      .then(res => {
+        const d = res.data;
+        setPreview({
+          imageUrl: d.imageUrls?.[0] ?? null,
+          content: d.content ?? '',
+          nickname: d.userProfile?.nickname ?? '',
+          profileImageUrl: d.userProfile?.userProfileImageUrl ?? null,
+        });
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [feedId]);
+
+  const handleClick = () => {
+    if (feedId) {
+      onNavigate(`/feed/${feedId}`);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="dm-chat-page__bubble-feed-skeleton" />;
+  }
+
+  return (
+    <div className="dm-chat-page__bubble-feed-card" onClick={handleClick}>
+      <div className="dm-chat-page__bubble-feed-author">
+        {preview?.profileImageUrl ? (
+          <img
+            src={preview.profileImageUrl}
+            alt={preview.nickname}
+            className="dm-chat-page__bubble-feed-avatar"
+          />
+        ) : (
+          <div className="dm-chat-page__bubble-feed-avatar-placeholder" />
+        )}
+        <span className="dm-chat-page__bubble-feed-nickname">
+          {preview?.nickname ?? ''}
+        </span>
+      </div>
+      {preview?.imageUrl && (
+        <img
+          src={preview.imageUrl}
+          alt="피드 이미지"
+          className="dm-chat-page__bubble-feed-thumb"
+        />
+      )}
+      {preview?.content && (
+        <p className="dm-chat-page__bubble-feed-preview">
+          <strong>{preview.nickname}</strong> {preview.content}
+        </p>
+      )}
+      <span className="dm-chat-page__bubble-feed-caption">피드를 보냈습니다</span>
+    </div>
   );
 };
 
@@ -77,6 +146,8 @@ const DmChatPage = () => {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   // 스크롤이 위에 있을 때 새 메시지 수신 시 배지로 표시
   const [newMessageCount, setNewMessageCount] = useState(0);
+  // 이미지 전체보기 모달
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -581,37 +652,29 @@ const DmChatPage = () => {
                     className={`dm-chat-page__bubble-wrap ${isMine ? 'dm-chat-page__bubble-wrap--mine' : 'dm-chat-page__bubble-wrap--theirs'}`}
                   >
                     <div
-                      className={`dm-chat-page__bubble ${isMine ? 'dm-chat-page__bubble--mine' : 'dm-chat-page__bubble--theirs'}`}
+                      className={`dm-chat-page__bubble ${isMine ? 'dm-chat-page__bubble--mine' : 'dm-chat-page__bubble--theirs'}${msg.type === 'IMAGE' ? ' dm-chat-page__bubble--image' : ''}${msg.type === 'FEED' ? ' dm-chat-page__bubble--feed' : ''}`}
                     >
                       {msg.type === 'TEXT' && (
                         <span className="dm-chat-page__bubble-text">{msg.content}</span>
                       )}
                       {msg.type === 'IMAGE' && (
-                        <div className="dm-chat-page__bubble-images">
+                        <div className={`dm-chat-page__bubble-images dm-chat-page__bubble-images--${(msg.images || []).length}`}>
                           {(msg.images || []).map((img, i) => (
                             <ChatImage
                               key={i}
                               src={img.imageUrl}
                               alt={`이미지 ${i + 1}`}
                               className="dm-chat-page__bubble-image"
+                              onClick={() => setSelectedImage(img.imageUrl)}
                             />
                           ))}
                         </div>
                       )}
                       {msg.type === 'FEED' && (
-                        <div
-                          className="dm-chat-page__bubble-feed"
-                          onClick={() => msg.relatedFeedId && navigate(`/feed/${msg.relatedFeedId}`)}
-                        >
-                          {msg.feedThumbnailUrl && (
-                            <img
-                              src={msg.feedThumbnailUrl}
-                              alt="피드"
-                              className="dm-chat-page__bubble-feed-thumb"
-                            />
-                          )}
-                          <span className="dm-chat-page__bubble-feed-label">[피드]</span>
-                        </div>
+                        <FeedPreviewBubble
+                          feedId={msg.relatedFeedId}
+                          onNavigate={navigate}
+                        />
                       )}
                     </div>
 
@@ -708,6 +771,27 @@ const DmChatPage = () => {
         onConfirm={handleLeave}
         danger
       />
+
+      {/* 이미지 전체보기 모달 */}
+      {selectedImage && (
+        <div
+          className="dm-chat-page__image-modal"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            className="dm-chat-page__image-modal-close"
+            onClick={() => setSelectedImage(null)}
+          >
+            ✕
+          </button>
+          <img
+            src={selectedImage}
+            alt="이미지 전체보기"
+            className="dm-chat-page__image-modal-img"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };
