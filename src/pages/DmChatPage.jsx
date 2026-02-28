@@ -99,7 +99,6 @@ const FeedPreviewBubble = ({ feedId, onNavigate }) => {
           <strong>{preview.nickname}</strong> {preview.content}
         </p>
       )}
-      <span className="dm-chat-page__bubble-feed-caption">피드를 보냈습니다</span>
     </div>
   );
 };
@@ -646,37 +645,44 @@ const DmChatPage = () => {
 
               {messages.map((msg, idx) => {
                 const isMine = msg.senderId === myUserId;
+                const bubbleBase = `dm-chat-page__bubble ${isMine ? 'dm-chat-page__bubble--mine' : 'dm-chat-page__bubble--theirs'}`;
                 return (
                   <div
                     key={msg.messageId ?? msg.clientMessageId ?? idx}
                     className={`dm-chat-page__bubble-wrap ${isMine ? 'dm-chat-page__bubble-wrap--mine' : 'dm-chat-page__bubble-wrap--theirs'}`}
                   >
-                    <div
-                      className={`dm-chat-page__bubble ${isMine ? 'dm-chat-page__bubble--mine' : 'dm-chat-page__bubble--theirs'}${msg.type === 'IMAGE' ? ' dm-chat-page__bubble--image' : ''}${msg.type === 'FEED' ? ' dm-chat-page__bubble--feed' : ''}`}
-                    >
-                      {msg.type === 'TEXT' && (
-                        <span className="dm-chat-page__bubble-text">{msg.content}</span>
-                      )}
-                      {msg.type === 'IMAGE' && (
-                        <div className={`dm-chat-page__bubble-images dm-chat-page__bubble-images--${(msg.images || []).length}`}>
-                          {(msg.images || []).map((img, i) => (
-                            <ChatImage
-                              key={i}
-                              src={img.imageUrl}
-                              alt={`이미지 ${i + 1}`}
-                              className="dm-chat-page__bubble-image"
-                              onClick={() => setSelectedImage(img.imageUrl)}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      {msg.type === 'FEED' && (
+                    {msg.type === 'FEED' ? (
+                      <>
                         <FeedPreviewBubble
                           feedId={msg.relatedFeedId}
                           onNavigate={navigate}
                         />
-                      )}
-                    </div>
+                        <div className={bubbleBase}>
+                          <span className="dm-chat-page__bubble-text">피드를 보냈습니다</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div
+                        className={`${bubbleBase}${msg.type === 'IMAGE' ? ' dm-chat-page__bubble--image' : ''}`}
+                      >
+                        {msg.type === 'TEXT' && (
+                          <span className="dm-chat-page__bubble-text">{msg.content}</span>
+                        )}
+                        {msg.type === 'IMAGE' && (
+                          <div className={`dm-chat-page__bubble-images dm-chat-page__bubble-images--${(msg.images || []).length}`}>
+                            {(msg.images || []).map((img, i) => (
+                              <ChatImage
+                                key={i}
+                                src={img.imageUrl}
+                                alt={`이미지 ${i + 1}`}
+                                className="dm-chat-page__bubble-image"
+                                onClick={() => setSelectedImage({ images: msg.images || [], index: i })}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className={`dm-chat-page__bubble-meta ${isMine ? 'dm-chat-page__bubble-meta--mine' : ''}`}>
                       {msg.status === 'sending' && (
@@ -784,12 +790,34 @@ const DmChatPage = () => {
           >
             ✕
           </button>
+          {selectedImage.index > 0 && (
+            <button
+              className="dm-chat-page__image-modal-prev"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImage(prev => ({ ...prev, index: prev.index - 1 }));
+              }}
+            >
+              ‹
+            </button>
+          )}
           <img
-            src={selectedImage}
+            src={selectedImage.images[selectedImage.index]?.imageUrl}
             alt="이미지 전체보기"
             className="dm-chat-page__image-modal-img"
             onClick={(e) => e.stopPropagation()}
           />
+          {selectedImage.index < selectedImage.images.length - 1 && (
+            <button
+              className="dm-chat-page__image-modal-next"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImage(prev => ({ ...prev, index: prev.index + 1 }));
+              }}
+            >
+              ›
+            </button>
+          )}
         </div>
       )}
     </div>
