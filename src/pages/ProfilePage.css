@@ -63,18 +63,6 @@
   color: var(--color-text-secondary);
 }
 
-/* 닉네임 줄 오른쪽에 배치되는 팔로우/팔로잉 버튼 */
-.my-page__btn--follow-inline {
-  flex: none;
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-  min-width: 64px;
-}
 
 /* 버튼 영역 */
 .my-page__buttons {
