@@ -96,7 +96,8 @@ const ProfilePage = () => {
     if (!userId) return;
     reset();
     setTimeout(() => loadMore(), 0);
-  }, [userId, reset, loadMore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   // 팔로우 / 언팔로우
   const handleToggleFollow = async () => {
@@ -275,7 +276,18 @@ const ProfilePage = () => {
           </div>
 
           <div className="my-page__info">
-            <h2 className="my-page__nickname">{profile.nickname}</h2>
+            <div className="my-page__info-header">
+              <h2 className="my-page__nickname">{profile.nickname}</h2>
+              {!profile.isMe && (
+                <button
+                  className={isFollowing ? 'my-page__btn my-page__btn--follow-inline --unfollowing' : 'my-page__btn my-page__btn--follow-inline --following'}
+                  onClick={handleToggleFollow}
+                  disabled={isFollowLoading}
+                >
+                  {isFollowLoading ? '' : isFollowing ? '팔로잉' : '팔로우'}
+                </button>
+              )}
+            </div>
             <div className="my-page__stats">
               <span style={{ marginRight: '20px' }}>피드 {feeds.length}</span>
               <span
@@ -286,7 +298,7 @@ const ProfilePage = () => {
               </span>
               <span
                 onClick={() => handleOpenFollowModal('followers')}
-                style={{ marginRight: '20px', cursor: 'pointer' }}
+                style={{ cursor: 'pointer' }}
               >
                 팔로워 {profile.followerCount}
               </span>
@@ -301,18 +313,9 @@ const ProfilePage = () => {
               계정 관리
             </button>
           ) : (
-            <>
-            <button
-              className={isFollowing? "my-page__btn --unfollowing" : "my-page__btn --following"}
-              onClick={handleToggleFollow}
-              disabled={isFollowLoading}
-            >
-              {isFollowLoading ? '' : isFollowing ? '팔로잉' : '팔로우'}
-            </button>
             <button className="my-page__btn" onClick={handleSendMessage}>
               메시지 보내기
             </button>
-            </>
           )}
           <button className="my-page__btn" onClick={handleClosetClick}>
             옷장 구경하러 가기
