@@ -339,6 +339,9 @@ const AIShopPage = () => {
       <div className="ai-shop-page__content">
         {renderTabs()}
 
+        {/* 타이틀 */}
+        <h2 className="ai-shop-page__title">원하는 스타일을 입력해보세요</h2>
+
         {/* 검색 입력 */}
         <div className="ai-shop-page__search">
           <div className="ai-shop-page__search-input-wrapper">

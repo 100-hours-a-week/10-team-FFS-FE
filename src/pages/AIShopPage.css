@@ -43,9 +43,16 @@
   cursor: default;
 }
 
+/* 타이틀 */
+.ai-shop-page__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
 /* 검색 입력 */
 .ai-shop-page__search {
-  margin-top: var(--spacing-lg);
 }
 
 .ai-shop-page__search-input-wrapper {
