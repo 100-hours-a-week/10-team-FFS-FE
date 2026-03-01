@@ -16,3 +16,4 @@ export { default as ClothesUploadPage } from './ClothesUploadPage';
 export { default as ClothesEditPage } from './ClothesEditPage';
 export { default as DmListPage } from './DmListPage';
 export { default as DmChatPage } from './DmChatPage';
+export { default as AIShopPage } from './AIShopPage';

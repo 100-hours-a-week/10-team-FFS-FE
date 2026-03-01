@@ -512,6 +512,37 @@ export const updateOutfitReaction = async (resultId, reaction) => {
 };
 
 /* ==============================================
+   AI 쇼핑 코디 추천 관련 API (v2)
+   ============================================== */
+
+/**
+ * 쇼핑 코디 추천 요청
+ * POST /api/v2/product-recommendations
+ * @param {string} content - 자연어 코디 요청 텍스트 (2~100자)
+ * @returns {Promise<{code: number, message: string, data: {outfitSummary: string, outfits: Array}}>}
+ */
+export const createProductRecommendation = async (content) => {
+  return apiRequest('/product-recommendations', {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  }, BASE_URL_V2);
+};
+
+/**
+ * 쇼핑 코디 피드백 등록
+ * PATCH /api/v2/product-recommendations/feedbacks/{resultId}
+ * @param {number} resultId - cordi_result.id (추천 응답의 feedbackId)
+ * @param {string} reaction - 'GOOD' | 'BAD' | 'NONE'
+ * @returns {Promise<{code: number, message: string, data: null}>}
+ */
+export const updateProductReaction = async (resultId, reaction) => {
+  return apiRequest(`/product-recommendations/feedbacks/${resultId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ reaction }),
+  }, BASE_URL_V2);
+};
+
+/* ==============================================
    피드 관련 API
    ============================================== */
 

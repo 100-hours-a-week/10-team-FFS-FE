@@ -27,6 +27,26 @@ const SUGGESTED_QUERIES = [
   '비온다... 뭐 입지?'
 ];
 
+// 탭 컴포넌트 (공통)
+const AiTabs = ({ activeTab, onTabChange }) => (
+  <div className="ai-coord-page__tabs">
+    <button
+      className={`ai-coord-page__tab${activeTab === 'coordi' ? ' ai-coord-page__tab--active' : ''}`}
+      onClick={() => { if (activeTab !== 'coordi') { onTabChange('coordi'); } }}
+      disabled={activeTab === 'coordi'}
+    >
+      AI 추천 코디 받아보기
+    </button>
+    <button
+      className={`ai-coord-page__tab${activeTab === 'shop' ? ' ai-coord-page__tab--active' : ''}`}
+      onClick={() => { if (activeTab !== 'shop') { onTabChange('shop'); } }}
+      disabled={activeTab === 'shop'}
+    >
+      AI 추천 상품 받아보기
+    </button>
+  </div>
+);
+
 const AICoordPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -190,6 +210,13 @@ const AICoordPage = () => {
     }
   };
 
+  // 탭 전환
+  const handleTabChange = (tab) => {
+    if (tab === 'shop') {
+      navigate('/ai-shop');
+    }
+  };
+
   // 새로운 코디 추천받기 (진입 화면으로)
   const handleNewSearch = () => {
     setResult(null);
@@ -206,6 +233,7 @@ const AICoordPage = () => {
       <div className="ai-coord-page">
         <Header title="AI 코디 추천" />
         <div className="ai-coord-page__content">
+          <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
           <div className="ai-coord-page__loading">
             <Spinner size="large" />
           </div>
@@ -220,6 +248,7 @@ const AICoordPage = () => {
       <div className="ai-coord-page">
         <Header title="AI 코디 추천" />
         <div className="ai-coord-page__content">
+          <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
           <div className="ai-coord-page__empty-closet">
             <p className="ai-coord-page__empty-closet-message">
               옷장에 옷이 없습니다. 옷을 등록하세요
@@ -239,6 +268,7 @@ const AICoordPage = () => {
       <div className="ai-coord-page">
         <Header title="AI 코디 추천" />
         <div className="ai-coord-page__content">
+          <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
           <div className="ai-coord-page__loading">
             <Spinner size="large" />
             <p>코디를 추천하고 있어요...</p>
@@ -254,6 +284,7 @@ const AICoordPage = () => {
       <div className="ai-coord-page">
         <Header title="AI 코디 추천" />
         <div className="ai-coord-page__content">
+          <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
           <div className="ai-coord-page__error">
             <p className="ai-coord-page__error-message">
               추천에 실패했어요. 다시 시도해주세요.
@@ -281,6 +312,7 @@ const AICoordPage = () => {
       <div className="ai-coord-page">
         <Header title="AI 코디 추천" />
         <div className="ai-coord-page__content">
+          <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
           {/* AI 변환 문구 */}
           <div className="ai-coord-page__summary">
             <p>{result.summary}</p>
@@ -394,6 +426,7 @@ const AICoordPage = () => {
     <div className="ai-coord-page">
       <Header title="AI 코디 추천" />
       <div className="ai-coord-page__content">
+        <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
         {/* 타이틀 */}
         <h2 className="ai-coord-page__title">TPO를 입력해보세요</h2>
 
