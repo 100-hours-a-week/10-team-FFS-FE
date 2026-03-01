@@ -23,6 +23,7 @@ import {
   MyPageEdit,
   DmListPage,
   DmChatPage,
+  AIShopPage,
 } from './pages';
 import { FullPageLoading } from './components/common';
 import './styles/global.css';
@@ -99,6 +100,9 @@ function AppRoutes() {
 
         {/* AI 코디 */}
         <Route path="/ai-coordi" element={<AICoordPage />} />
+
+        {/* AI 쇼핑 추천 */}
+        <Route path="/ai-shop" element={<AIShopPage />} />
 
         {/* 피드 */}
         <Route path="/feed" element={<FeedListPage />} />

@@ -47,6 +47,9 @@ const BottomNav = () => {
     if (path === '/feed') {
       return location.pathname === '/feed' || location.pathname === '/';
     }
+    if (path === '/ai-coordi') {
+      return location.pathname === '/ai-coordi' || location.pathname === '/ai-shop';
+    }
     return location.pathname.startsWith(path);
   };
 
