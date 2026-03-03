@@ -43,8 +43,8 @@ jobs:
           REACT_APP_BASE_URL_DEV: ${{ secrets.REACT_APP_BASE_URL_DEV }}
           REACT_APP_KAKAO_CLIENT_ID: ${{ secrets.REACT_APP_KAKAO_CLIENT_ID }}
           REACT_APP_KAKAO_REDIRECT_URI_DEV: ${{ secrets.REACT_APP_KAKAO_REDIRECT_URI_DEV }}
-          REACT_APP_CHAT_BASE_URL_DEV: ${{ secret.V2_STAGING_REACT_APP_CHAT_BASE_URL }}
-          REACT_APP_CHAT_BASE_URL_PROD: ${{ secret.V2_PROD_REACT_APP_CHAT_BASE_URL }}
+          REACT_APP_CHAT_BASE_URL_DEV: ${{ secrets.V2_STAGING_REACT_APP_CHAT_BASE_URL }}
+          REACT_APP_CHAT_BASE_URL_PROD: ${{ secrets.V2_PROD_REACT_APP_CHAT_BASE_URL }}
         run: CI=false npm run build
 
       - name: Run tests
