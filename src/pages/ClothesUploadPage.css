@@ -436,3 +436,88 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
+
+/* 소스 그룹 헤더 */
+.clothes-upload-page__source-header {
+  padding: 12px 16px;
+  background: var(--bg-secondary, #f5f5f5);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.clothes-upload-page__source-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clothes-upload-page__source-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.clothes-upload-page__source-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clothes-upload-page__source-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.clothes-upload-page__source-badge {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+}
+
+.clothes-upload-page__source-badge--failed {
+  color: var(--color-error, #e53e3e);
+  font-weight: 600;
+}
+
+.clothes-upload-page__source-badge--processing {
+  color: var(--color-primary, #3182ce);
+}
+
+/* 이미지 dimmed (처리중/실패 시 원본 위에 오버레이) */
+.clothes-upload-page__main-image--dimmed {
+  opacity: 0.3;
+}
+
+.clothes-upload-page__image-loading,
+.clothes-upload-page__image-failed {
+  position: relative;
+}
+
+.clothes-upload-page__image-loading-overlay,
+.clothes-upload-page__image-failed-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 인디케이터 그룹 */
+.clothes-upload-page__indicator-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clothes-upload-page__indicator-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border-color, #ddd);
+  margin: 0 4px;
+}
+
+.clothes-upload-page__indicator--failed {
+  background: var(--color-error, #e53e3e) !important;
+}
