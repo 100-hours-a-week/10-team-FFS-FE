@@ -3,9 +3,9 @@
    모든 API 함수를 여기서 관리합니다.
    ============================================== */
 
-const BASE_URL = process.env.REACT_APP_BASE_URL_PROD || 'http://localhost:8080/api/v1';
+const BASE_URL = process.env.REACT_APP_BASE_URL_DEV || 'http://localhost:8080/api/v1';
 const BASE_URL_V2 = BASE_URL.replace('/v1', '/v2');
-const BASE_URL_CHAT_V2 = (process.env.REACT_APP_CHAT_BASE_URL_PROD || 'http://localhost:8081/api/v1').replace('/v1', '/v2');
+const BASE_URL_CHAT_V2 = (process.env.REACT_APP_CHAT_BASE_URL_DEV || 'http://localhost:8081/api/v1').replace('/v1', '/v2');
 
 // 토큰 관리
 const getAccessToken = () => localStorage.getItem('accessToken');
