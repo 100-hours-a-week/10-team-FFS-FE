@@ -246,24 +246,6 @@ const AIShopPage = () => {
               </button>
 
               <div className="ai-shop-page__outfit-container">
-                {/* 피드백 버튼 (카드 하단 좌측) */}
-                <div className="ai-shop-page__feedback-btns">
-                  <button
-                    className={`ai-shop-page__feedback-btn${currentReaction === 'GOOD' ? ' ai-shop-page__feedback-btn--active' : ''}`}
-                    onClick={() => handleReaction('GOOD')}
-                    aria-label="좋아요"
-                  >
-                    {currentReaction === 'GOOD' ? <IoThumbsUp size={20} /> : <IoThumbsUpOutline size={20} />}
-                  </button>
-                  <button
-                    className={`ai-shop-page__feedback-btn${currentReaction === 'BAD' ? ' ai-shop-page__feedback-btn--active' : ''}`}
-                    onClick={() => handleReaction('BAD')}
-                    aria-label="싫어요"
-                  >
-                    {currentReaction === 'BAD' ? <IoThumbsDown size={20} /> : <IoThumbsDownOutline size={20} />}
-                  </button>
-                </div>
-
                 {/* 상품 목록 */}
                 <div className={getProductListClass(products.length)}>
                   {products.slice(0, 8).map((product, idx) => (
@@ -291,6 +273,24 @@ const AIShopPage = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* 피드백 버튼 (카드 하단 좌측) */}
+                <div className="ai-shop-page__feedback-btns">
+                  <button
+                    className={`ai-shop-page__feedback-btn${currentReaction === 'GOOD' ? ' ai-shop-page__feedback-btn--active' : ''}`}
+                    onClick={() => handleReaction('GOOD')}
+                    aria-label="좋아요"
+                  >
+                    {currentReaction === 'GOOD' ? <IoThumbsUp size={20} /> : <IoThumbsUpOutline size={20} />}
+                  </button>
+                  <button
+                    className={`ai-shop-page__feedback-btn${currentReaction === 'BAD' ? ' ai-shop-page__feedback-btn--active' : ''}`}
+                    onClick={() => handleReaction('BAD')}
+                    aria-label="싫어요"
+                  >
+                    {currentReaction === 'BAD' ? <IoThumbsDown size={20} /> : <IoThumbsDownOutline size={20} />}
+                  </button>
                 </div>
               </div>
 
