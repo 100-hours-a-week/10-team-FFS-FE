@@ -957,7 +957,7 @@ export const getUnreadChatStatus = () =>
   apiRequest('/chat/unread', {}, BASE_URL_CHAT_V2);
 
 export const getWsUrl = () => {
-  const base = process.env.REACT_APP_CHAT_BASE_URL_PROD || 'http://localhost:8081/api/v1';
+  const base = process.env.REACT_APP_CHAT_BASE_URL_DEV || 'http://localhost:8081/api/v1';
   return base.replace('/api/v1', '').replace(/^http/, 'ws') + '/ws';
 };
 
