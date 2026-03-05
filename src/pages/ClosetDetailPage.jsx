@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { AlertModal, ActionSheet, Spinner } from '../components/common';
-import { getClothesDetail, deleteClothes } from '../api';
+import { getClothesDetail, deleteClothes, getClothesFeeds } from '../api';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import { useToast } from '../contexts/ToastContext';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
+import FeedList from './FeedList';
 import './ClosetDetailPage.css';
 
-// 카테고리 라벨 매핑
 const CATEGORY_LABELS = {
   TOP: '상의',
   BOTTOM: '하의',
@@ -21,7 +22,7 @@ const ClosetDetailPage = () => {
   const { clothesId } = useParams();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
-  
+
   const [clothes, setClothes] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showActionSheet, setShowActionSheet] = useState(false);
@@ -52,20 +53,42 @@ const ClosetDetailPage = () => {
     loadClothes();
   }, [clothesId, navigate, showError]);
 
-  // 구매일 포맷팅
+  // 태그된 피드 - FeedListPage와 동일한 패턴
+  const fetchTaggedFeeds = useCallback(async (cursor) => {
+    const response = await getClothesFeeds(clothesId, cursor, 12);
+    const { items, pageInfo } = response.data;
+
+    return {
+      data: items.map((item) => ({
+        id: item.feedId,
+        primaryImageUrl: item.primaryImageUrl,
+        likeCount: item.likeCount,
+        commentCount: item.commentCount,
+        author: {
+          id: item.userProfile.userId,
+          profileImage: item.userProfile.userProfileImageUrl,
+          nickname: item.userProfile.nickname,
+        },
+        isLiked: item.isLiked,
+      })),
+      nextCursor: pageInfo.hasNextPage ? pageInfo.nextCursor : null,
+      hasMore: pageInfo.hasNextPage,
+    };
+  }, [clothesId]);
+
+  const taggedFeeds = useInfiniteScroll(fetchTaggedFeeds, { threshold: 300 });
+
   const formatBoughtDate = (boughtDate) => {
     if (!boughtDate) return '-';
     const date = new Date(boughtDate);
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
   };
 
-  // 가격 포맷팅
   const formatPrice = (price) => {
     if (!price) return '-';
     return `${price.toLocaleString()}원`;
   };
 
-  // 옷 삭제
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
@@ -81,7 +104,6 @@ const ClosetDetailPage = () => {
     }
   };
 
-  // 옷 수정
   const handleEdit = () => {
     navigate(`/clothes/${clothesId}/edit`);
   };
@@ -108,8 +130,8 @@ const ClosetDetailPage = () => {
 
   return (
     <div className="closet-detail-page">
-      <Header 
-        showBack 
+      <Header
+        showBack
         title="옷 상세"
         rightAction={clothes.isOwner ? () => setShowActionSheet(true) : undefined}
         rightIcon={clothes.isOwner ? <HiOutlineDotsHorizontal size={24} /> : undefined}
@@ -120,8 +142,8 @@ const ClosetDetailPage = () => {
         <div className="closet-detail-page__image-section">
           <div className="closet-detail-page__image-container">
             {clothes.clothesImageUrl ? (
-              <img 
-                src={clothes.clothesImageUrl} 
+              <img
+                src={clothes.clothesImageUrl}
                 alt={clothes.name}
                 className="closet-detail-page__image"
               />
@@ -172,9 +194,7 @@ const ClosetDetailPage = () => {
             <div className="closet-detail-page__tags">
               {clothes.material && clothes.material.length > 0 ? (
                 clothes.material.map((item, index) => (
-                  <span key={index} className="closet-detail-page__tag">
-                    {item}
-                  </span>
+                  <span key={index} className="closet-detail-page__tag">{item}</span>
                 ))
               ) : (
                 <p className="closet-detail-page__value">-</p>
@@ -187,9 +207,7 @@ const ClosetDetailPage = () => {
             <div className="closet-detail-page__tags">
               {clothes.color && clothes.color.length > 0 ? (
                 clothes.color.map((item, index) => (
-                  <span key={index} className="closet-detail-page__tag">
-                    {item}
-                  </span>
+                  <span key={index} className="closet-detail-page__tag">{item}</span>
                 ))
               ) : (
                 <p className="closet-detail-page__value">-</p>
@@ -212,16 +230,39 @@ const ClosetDetailPage = () => {
             </div>
           </div>
         </div>
+
+        {/* 구분선 */}
+        <div className="closet-detail-page__divider" />
+
+        {/* 태그된 피드 섹션 */}
+        <div className="closet-detail-page__feeds-section">
+          <div className="closet-detail-page__feeds-header">
+            <h3 className="closet-detail-page__feeds-title">태그된 피드</h3>
+          </div>
+
+          {taggedFeeds.data.length === 0 && !taggedFeeds.isLoading ? (
+            <div className="closet-detail-page__feeds-empty">
+              <p className="closet-detail-page__feeds-empty-text">
+                이 옷이 태그된 피드가 없습니다.
+              </p>
+            </div>
+          ) : (
+            <FeedList
+              feeds={taggedFeeds.data}
+              isLoading={taggedFeeds.isLoading}
+              lastElementRef={taggedFeeds.lastElementRef}
+              onFeedClick={(feedId) => navigate(`/feed/${feedId}`)}
+            />
+          )}
+        </div>
       </div>
 
-      {/* 액션 시트 */}
       <ActionSheet
         isOpen={showActionSheet}
         onClose={() => setShowActionSheet(false)}
         actions={actions}
       />
 
-      {/* 삭제 확인 모달 */}
       <AlertModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

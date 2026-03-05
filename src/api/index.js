@@ -364,6 +364,21 @@ export const updateClothes = async (clothesId, clothesData) => {
   });
 };
 
+/**
+ * 특정 옷에 태그된 피드 목록 조회 (커서 기반 페이지네이션)
+ * GET /api/clothes/{clothesId}/feeds?after={cursor}&limit={limit}
+ */
+export const getClothesFeeds = async (clothesId, after, limit) => {
+  const params = new URLSearchParams();
+  if (after) params.append('after', after);
+  if (limit) params.append('limit', limit);
+
+  const queryString = params.toString();
+  const url = `/clothes/${clothesId}/feeds${queryString ? `?${queryString}` : ''}`;
+
+  return apiRequest(url, { method: 'GET' }, BASE_URL_V2);
+};
+
 // ============================================
 // 옷 분석 관련 api
 // ============================================
