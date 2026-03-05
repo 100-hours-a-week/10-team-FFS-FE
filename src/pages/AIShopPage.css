@@ -171,7 +171,7 @@
 /* 캐러셀 */
 .ai-shop-page__carousel {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-xs);
 }
 
@@ -187,7 +187,6 @@
   border-radius: 50%;
   color: var(--color-text-primary);
   cursor: pointer;
-  margin-top: var(--spacing-md);
   transition: all var(--transition-fast);
 }
 
@@ -205,7 +204,7 @@
 .ai-shop-page__feedback-btns {
   display: flex;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
 }
 
 .ai-shop-page__feedback-btn {
