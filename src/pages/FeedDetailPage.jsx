@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Button, Spinner, AlertModal, ActionSheet, Modal, ScrollToTopButton } from '../components/common';
+import { Button, Spinner, AlertModal, ActionSheet, Modal, ScrollToTopButton, LoginPromptModal } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import {
@@ -82,6 +82,15 @@ const FeedDetailPage = () => {
   const [warned, setWarned] = useState(false);
 
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+  // 로그인 유도 모달
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMessage, setLoginModalMessage] = useState('');
+
+  const requireLogin = (message) => {
+    setLoginModalMessage(message);
+    setShowLoginModal(true);
+  };
 
   // 피드 데이터 로드
   useEffect(() => {
@@ -270,6 +279,10 @@ const FeedDetailPage = () => {
   };
 
   const handleLike = async () => {
+    if (!user) {
+      requireLogin('좋아요를 누르려면 로그인이 필요합니다.');
+      return;
+    }
     try {
       if (isLiked) {
         const response = await unlikeFeed(feedId);
@@ -287,6 +300,10 @@ const FeedDetailPage = () => {
   };
 
   const handleToggleFollow = async (targetUserId) => {
+    if (!user) {
+      requireLogin('팔로우하려면 로그인이 필요합니다.');
+      return;
+    }
     const targetUser = likedUsers.find(u => u.id === targetUserId);
     if (!targetUser) return;
   
@@ -324,6 +341,10 @@ const FeedDetailPage = () => {
 
 
   const handleToggleAuthorFollow = async () => {
+    if (!user) {
+      requireLogin('팔로우하려면 로그인이 필요합니다.');
+      return;
+    }
     if (feed.isFollowLoading) return;
     setIsFollowLoading(true);
     try {
@@ -346,6 +367,10 @@ const FeedDetailPage = () => {
   
 
   const handleCommentLike = async (commentId, isReply = false, parentCommentId = null) => {
+    if (!user) {
+      requireLogin('좋아요를 누르려면 로그인이 필요합니다.');
+      return;
+    }
     try {
       let currentIsLiked = false;
       
@@ -419,6 +444,10 @@ const FeedDetailPage = () => {
 
   // 댓글 작성/수정 제출
   const handleSubmitComment = async () => {
+    if (!user) {
+      requireLogin('댓글을 작성하려면 로그인이 필요합니다.');
+      return;
+    }
     if (!commentText.trim()) return;
 
     if (commentText.length > MAX_CONTENT_LENGTH) {
@@ -539,6 +568,10 @@ const FeedDetailPage = () => {
 
   // 답글 달기
   const handleReply = (comment) => {
+    if (!user) {
+      requireLogin('답글을 작성하려면 로그인이 필요합니다.');
+      return;
+    }
     // 수정 모드 취소
     setEditingComment(null);
     setReplyTo({ commentId: comment.id, nickname: comment.author.nickname });
@@ -666,9 +699,18 @@ const FeedDetailPage = () => {
 
   // 입력창 placeholder 텍스트
   const getInputPlaceholder = () => {
+    if (!user) return '로그인 후 댓글을 작성할 수 있습니다.';
     if (editingComment) return '댓글을 수정하세요...';
     if (replyTo) return '답글을 입력하세요...';
     return '댓글을 입력하세요...';
+  };
+
+  // 비회원 댓글 입력 포커스 시 로그인 유도
+  const handleCommentInputFocus = () => {
+    if (!user) {
+      commentInputRef.current?.blur();
+      requireLogin('댓글을 작성하려면 로그인이 필요합니다.');
+    }
   };
 
   // 입력창 버튼 텍스트
@@ -690,6 +732,11 @@ const FeedDetailPage = () => {
 
   // DM 공유 모달 열기
   const handleOpenDmShare = async () => {
+    if (!user) {
+      setShowShareSheet(false);
+      requireLogin('DM 공유를 이용하려면 로그인이 필요합니다.');
+      return;
+    }
     setShowShareSheet(false);
     setShowDmModal(true);
     setIsDmRoomsLoading(true);
@@ -858,7 +905,13 @@ const FeedDetailPage = () => {
           </button>
           <button
             className="feed-detail-page__action-btn"
-            onClick={() => commentInputRef.current?.focus()}
+            onClick={() => {
+              if (!user) {
+                requireLogin('댓글을 작성하려면 로그인이 필요합니다.');
+                return;
+              }
+              commentInputRef.current?.focus();
+            }}
           >
             <IoChatbubbleOutline size={24} />
           </button>
@@ -1099,8 +1152,10 @@ const FeedDetailPage = () => {
             placeholder={getInputPlaceholder()}
             value={commentText}
             onChange={handleContentChange}
+            onFocus={handleCommentInputFocus}
             onKeyPress={(e) => e.key === 'Enter' && handleSubmitComment()}
             maxLength={MAX_CONTENT_LENGTH}
+            readOnly={!user}
           />
           <Button 
             size="small"
@@ -1240,14 +1295,21 @@ const FeedDetailPage = () => {
           setDeleteTarget(null);
         }}
         title={deleteTarget?.type === 'feed' ? '피드 삭제' : '댓글 삭제'}
-        message={deleteTarget?.type === 'feed' 
-          ? '이 피드를 삭제하시겠습니까?' 
+        message={deleteTarget?.type === 'feed'
+          ? '이 피드를 삭제하시겠습니까?'
           : '이 댓글을 삭제하시겠습니까?'
         }
         confirmText="삭제"
         cancelText="취소"
         onConfirm={deleteTarget?.type === 'feed' ? handleDeleteFeed : handleDeleteComment}
         danger
+      />
+
+      {/* 로그인 유도 모달 */}
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        message={loginModalMessage}
       />
     </div>
   );

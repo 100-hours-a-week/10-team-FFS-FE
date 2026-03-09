@@ -176,8 +176,8 @@
   background-color: #262626;
 }
 
-/* DM 아이콘 버튼 */
-.feed-list-page__dm-btn {
+/* 헤더 우상단 버튼 (DM / 로그인) */
+.feed-list-page__header-btn {
   position: relative;
   display: flex;
   align-items: center;
