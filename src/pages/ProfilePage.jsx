@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Spinner, Modal, Button } from '../components/common';
+import { Spinner, Modal, Button, LoginPromptModal } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getUserProfile, getUserFeeds, followUser, unfollowUser, getFollowings, getFollowers, createChatRoom } from '../api';
@@ -12,8 +12,8 @@ import './ProfilePage.css';
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
-  const { user: currentUser } = useAuth();
-  const { success, error: showError } = useToast();
+  const { user: currentUser, isAuthenticated } = useAuth();
+  const { error: showError } = useToast();
 
   const [profile, setProfile] = useState(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
@@ -27,6 +27,15 @@ const ProfilePage = () => {
   const [hasMoreFollow, setHasMoreFollow] = useState(false);
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
   const [followSort, setFollowSort] = useState('timeDesc'); // 'timeDesc' | 'timeAsc'
+
+  // 로그인 유도 모달
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMessage, setLoginModalMessage] = useState('');
+
+  const requireLogin = (message) => {
+    setLoginModalMessage(message);
+    setShowLoginModal(true);
+  };
 
   // 프로필 조회
   useEffect(() => {
@@ -58,7 +67,9 @@ const ProfilePage = () => {
       }
     };
 
-    if (userId) loadProfile();
+    if (userId) {
+      loadProfile();
+    }
   }, [userId, navigate, showError]);
 
   // 프로필 피드 무한 스크롤 fetch 함수
@@ -93,7 +104,9 @@ const ProfilePage = () => {
   } = useInfiniteScroll(fetchUserFeeds, { threshold: 300, initialLoad: false });
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      return;
+    }
     reset();
     setTimeout(() => loadMore(), 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,7 +114,13 @@ const ProfilePage = () => {
 
   // 팔로우 / 언팔로우
   const handleToggleFollow = async () => {
-    if (isFollowLoading) return;
+    if (!isAuthenticated) {
+      requireLogin('팔로우하려면 로그인이 필요합니다.');
+      return;
+    }
+    if (isFollowLoading) {
+      return;
+    }
     setIsFollowLoading(true);
     try {
       if (isFollowing) {
@@ -174,7 +193,9 @@ const ProfilePage = () => {
   };
 
   const handleSortChange = (newSort) => {
-    if (newSort === followSort) return;
+    if (newSort === followSort) {
+      return;
+    }
     setFollowSort(newSort);
     setFollowList([]);
     setFollowCursor(null);
@@ -183,8 +204,14 @@ const ProfilePage = () => {
 
   // 모달 내 팔로우 토글
   const handleToggleFollowInList = async (targetUserId) => {
+    if (!isAuthenticated) {
+      requireLogin('팔로우하려면 로그인이 필요합니다.');
+      return;
+    }
     const targetUser = followList.find(u => u.id === targetUserId);
-    if (!targetUser) return;
+    if (!targetUser) {
+      return;
+    }
 
     try {
       if (targetUser.isFollowing) {
@@ -217,6 +244,10 @@ const ProfilePage = () => {
 
   // 메시지 보내기
   const handleSendMessage = async () => {
+    if (!isAuthenticated) {
+      requireLogin('메시지를 보내려면 로그인이 필요합니다.');
+      return;
+    }
     try {
       const response = await createChatRoom(Number(userId));
       const roomId = response.data.roomId;
@@ -240,7 +271,13 @@ const ProfilePage = () => {
   const handleSettingsClick = () => navigate('/mypage/edit');
 
   // 옷장으로 이동
-  const handleClosetClick = () => navigate(`/closet/${userId}`);
+  const handleClosetClick = () => {
+    if (!isAuthenticated) {
+      requireLogin('옷장을 보려면 로그인이 필요합니다.');
+      return;
+    }
+    navigate(`/closet/${userId}`);
+  };
 
   if (isProfileLoading) {
     return (
@@ -377,8 +414,8 @@ const ProfilePage = () => {
             ) : (
               <>
                 {followList.map(followedUser => (
-                  <div 
-                    key={followedUser.id} 
+                  <div
+                    key={followedUser.id}
                     className="follow-modal__item"
                   >
                     <div
@@ -426,6 +463,13 @@ const ProfilePage = () => {
           </div>
         </Modal>
       </div>
+
+      {/* 로그인 유도 모달 */}
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        message={loginModalMessage}
+      />
     </div>
   );
 };

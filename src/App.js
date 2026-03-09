@@ -52,7 +52,18 @@ const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/closet" replace />;
+    return <Navigate to="/feed" replace />;
+  }
+
+  return children;
+};
+
+// 인증 로딩 완료까지 대기하는 래퍼 (비회원도 접근 가능)
+const WaitForAuth = ({ children }) => {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return <FullPageLoading />;
   }
 
   return children;
@@ -61,7 +72,7 @@ const PublicRoute = ({ children }) => {
 function AppRoutes() {
   return (
     <Routes>
-      {/* 공개 라우트 */}
+      {/* 공개 라우트 (로그인/회원가입) */}
       <Route
         path="/login"
         element={
@@ -81,7 +92,26 @@ function AppRoutes() {
       {/* 카카오 OAuth 콜백 */}
       <Route path="/oauth/kakao/callback" element={<KakaoCallbackPage />} />
 
-      {/* 보호된 라우트 - 레이아웃 포함 */}
+      {/* 비회원도 접근 가능한 라우트 (피드 목록/상세, 프로필) */}
+      <Route
+        element={
+          <WaitForAuth>
+            <AppLayout />
+          </WaitForAuth>
+        }
+      >
+        {/* 기본 경로 → 피드 홈 */}
+        <Route index element={<Navigate to="/feed" replace />} />
+
+        {/* 피드 (읽기) */}
+        <Route path="/feed" element={<FeedListPage />} />
+        <Route path="/feed/:feedId" element={<FeedDetailPage />} />
+
+        {/* 프로필 (읽기) */}
+        <Route path="/profile/:userId" element={<ProfilePage />} />
+      </Route>
+
+      {/* 보호된 라우트 - 로그인 필수 */}
       <Route
         element={
           <ProtectedRoute>
@@ -89,9 +119,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        {/* 기본 경로 리다이렉트 */}
-        <Route index element={<Navigate to="/feed" replace />} />
-        
         {/* 옷장 */}
         <Route path="/closet/:userId" element={<ClosetListPage />} />
         <Route path="/closet/upload" element={<ClothesUploadPage />} />
@@ -104,14 +131,11 @@ function AppRoutes() {
         {/* AI 쇼핑 추천 */}
         <Route path="/ai-shop" element={<AIShopPage />} />
 
-        {/* 피드 */}
-        <Route path="/feed" element={<FeedListPage />} />
+        {/* 피드 (쓰기) */}
         <Route path="/feed/create" element={<FeedCreatePage />} />
-        <Route path="/feed/:feedId" element={<FeedDetailPage />} />
         <Route path="/feed/:feedId/edit" element={<FeedCreatePage />} />
 
-        {/* 프로필 */}
-        <Route path="/profile/:userId" element={<ProfilePage />} />
+        {/* 타인 옷장 */}
         <Route path="/profile/:userId/closet" element={<OtherClosetListPage />} />
         <Route path="/profile/:userId/closet/:clothesId" element={<OtherClosetDetailPage />} />
 

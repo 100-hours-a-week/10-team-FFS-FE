@@ -1,19 +1,28 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { ScrollToTopButton } from '../components/common';
+import { ScrollToTopButton, LoginPromptModal } from '../components/common';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import { getFeeds, getFollowingFeeds } from '../api';
+import { useAuth } from '../contexts/AuthContext';
 import { useChatContext } from '../contexts/ChatContext';
-import { IoPaperPlaneOutline } from 'react-icons/io5';
+import { IoPaperPlaneOutline, IoLogInOutline } from 'react-icons/io5';
 import FeedList from './FeedList';
 import './FeedListPage.css';
 
 
 const FeedListPage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const { hasUnread } = useChatContext();
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'following'
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMessage, setLoginModalMessage] = useState('');
+
+  const requireLogin = (message) => {
+    setLoginModalMessage(message);
+    setShowLoginModal(true);
+  };
 
   const fetchAllFeeds = useCallback(async (cursor) => {
     const response = await getFeeds(cursor, 12);
@@ -55,7 +64,16 @@ const FeedListPage = () => {
   });
 
   const handleTabChange = (tab) => {
-    if (tab === activeTab) return;
+    if (tab === activeTab) {
+      return;
+    }
+
+    // 비회원은 팔로잉 탭 접근 불가
+    if (tab === 'following' && !isAuthenticated) {
+      requireLogin('팔로잉 피드를 보려면 로그인이 필요합니다.');
+      return;
+    }
+
     setActiveTab(tab);
 
     // 팔로잉 탭을 처음 누를 때만 로드
@@ -64,10 +82,6 @@ const FeedListPage = () => {
     }
   };
   const currentFeeds = activeTab === 'all' ? allFeeds : followingFeeds;
-
-  const { data: feeds, isLoading, lastElementRef } =
-    useInfiniteScroll(fetchAllFeeds, { threshold: 300 });
-
 
   const mapFeedItem = (item) => ({
     id: item.feedId,
@@ -82,19 +96,35 @@ const FeedListPage = () => {
     isLiked: item.isLiked,
   });
 
+  // 헤더 우상단 요소: 회원은 DM 아이콘, 비회원은 로그인 아이콘
+  const renderHeaderRight = () => {
+    if (isAuthenticated) {
+      return (
+        <button
+          className="feed-list-page__header-btn"
+          onClick={() => navigate('/dm')}
+        >
+          <IoPaperPlaneOutline size={24} />
+          {hasUnread && <span className="feed-list-page__dm-dot" />}
+        </button>
+      );
+    }
+
+    return (
+      <button
+        className="feed-list-page__header-btn"
+        onClick={() => navigate('/login')}
+      >
+        <IoLogInOutline size={24} />
+      </button>
+    );
+  };
+
   return (
     <div className="feed-list-page">
       <Header
         title="피드"
-        rightElement={
-          <button
-            className="feed-list-page__dm-btn"
-            onClick={() => navigate('/dm')}
-          >
-            <IoPaperPlaneOutline size={24} />
-            {hasUnread && <span className="feed-list-page__dm-dot" />}
-          </button>
-        }
+        rightElement={renderHeaderRight()}
       />
 
       {/* 탭 */}
@@ -133,6 +163,12 @@ const FeedListPage = () => {
       </div>
 
       <ScrollToTopButton />
+
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        message={loginModalMessage}
+      />
     </div>
   );
 };
