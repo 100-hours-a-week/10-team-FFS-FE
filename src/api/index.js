@@ -284,7 +284,7 @@ export const getMyClothesCount = async () => {
  * 내 옷장 목록 조회
  * GET /api/v1/users/{userId}/clothes
  * @param {number} userId - 사용자 ID
- * @param {string|null} category - 카테고리 필터 (TOP, BOTTOM, DRESS, SHOES, ACCESSORY, ETC). null이면 전체 조회
+ * @param {string|null} category - 카테고리 필터 (TOP, BOTTOM, DRESS, SHOES, ACCESSORY, OUTER, ETC). null이면 전체 조회
  * @param {number|null} after - 커서 (이전 페이지 마지막 옷 ID)
  * @param {number} limit - 조회 개수 (기본값 36)
  * @returns {Promise<{code: number, message: string, data: {items: Array<{clothesId: number, imageUrl: string}>, pageInfo: {hasNextPage: boolean, nextCursor: number|null}}}>}
