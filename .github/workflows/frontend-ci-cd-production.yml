@@ -1,14 +1,7 @@
 name: Frontend CI/CD
 
 on:
-  # PR 생성/업데이트 시 CI만 실행
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: [main]
-
-  # 머지(push) 시 CI + CD 실행
-  push:
-    branches: [main]
+  workflow_dispatch: # v2(S3)로 전환 후 비활성화
 
 env:
   APP_DIR: /var/www/frontend
