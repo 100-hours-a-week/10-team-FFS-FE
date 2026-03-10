@@ -4,7 +4,7 @@ import './LoginPage.css';
 
 // 카카오 로그인 설정
 const KAKAO_CLIENT_ID = process.env.REACT_APP_KAKAO_CLIENT_ID;
-const KAKAO_REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI_DEV;
+const KAKAO_REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI_PROD;
 
 const LoginPage = () => {
   // 카카오 로그인 페이지로 리다이렉트
