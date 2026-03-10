@@ -7,6 +7,16 @@ import { mockClothes } from '../mocks/data';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import './OtherClosetDetailPage.css';
 
+const CATEGORY_LABELS = {
+  TOP: '상의',
+  BOTTOM: '하의',
+  DRESS: '원피스',
+  SHOES: '신발',
+  ACCESSORY: '악세사리',
+  OUTER: '아우터',
+  ETC: '기타',
+};
+
 const OtherClosetDetailPage = () => {
   const { userId, clothesId } = useParams();
   const { error: showError } = useToast();
@@ -142,7 +152,7 @@ const OtherClosetDetailPage = () => {
 
         <div className="other-closet-detail-page__field">
           <label className="other-closet-detail-page__label">카테고리</label>
-          <p className="other-closet-detail-page__value">{clothes.category}</p>
+          <p className="other-closet-detail-page__value">{CATEGORY_LABELS[clothes.category] || clothes.category || '-'}</p>
         </div>
 
         <div className="other-closet-detail-page__field">

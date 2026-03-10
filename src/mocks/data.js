@@ -40,6 +40,7 @@ export const categories = [
   { id: 'ONEPIECE', label: '원피스' },
   { id: 'SHOES', label: '신발' },
   { id: 'ACCESSORY', label: '악세사리' },
+  { id: 'OUTER', label: '아우터' },
   { id: 'ETC', label: '기타' },
 ];
 

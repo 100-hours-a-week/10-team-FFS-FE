@@ -15,6 +15,7 @@ const CATEGORY_LABELS = {
   DRESS: '원피스',
   SHOES: '신발',
   ACCESSORY: '악세사리',
+  OUTER: '아우터',
   ETC: '기타',
 };
 
