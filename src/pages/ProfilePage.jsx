@@ -185,6 +185,10 @@ const ProfilePage = () => {
 
   // 모달 열기
   const handleOpenFollowModal = (type) => {
+    if (!isAuthenticated) {
+      requireLogin('팔로우 목록을 보려면 로그인이 필요합니다.');
+      return;
+    }
     setModalType(type);
     setFollowList([]);
     setFollowCursor(null);
