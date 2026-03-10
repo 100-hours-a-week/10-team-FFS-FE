@@ -337,18 +337,11 @@ const AICoordPage = () => {
 
               {/* 이미지 영역 */}
               <div className="ai-coord-page__image-container">
-                  <div className="ai-coord-page__clothes-grid">
-                    {currentOutfit.clothes.map((item) => (
-                      <div
-                        key={item.clothesId}
-                        className="ai-coord-page__clothes-item"
-                        onClick={() => handleClothesClick(item.clothesId)}
-                      >
-                        <img src={item.imageUrl} alt={item.name} />
-                        <span className="ai-coord-page__clothes-name">{item.name}</span>
-                      </div>
-                    ))}
-                  </div>
+                <img
+                  src={currentOutfit.imageUrl}
+                  alt="AI 추천 코디"
+                  className="ai-coord-page__outfit-image"
+                />
               </div>
 
               {/* 다음 버튼 */}
