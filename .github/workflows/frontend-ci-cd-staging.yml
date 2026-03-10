@@ -1,14 +1,7 @@
 name: Frontend CI/CD - Staging
 
 on:
-  # PR 생성/업데이트 시 CI만 실행
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: [dev]
-
-  # dev 브랜치 머지 시 CI + CD 실행
-  push:
-    branches: [dev]
+  workflow_dispatch: # v2(S3)로 전환 후 비활성화
 
 env:
   BUILD_DIR: /var/www/frontend
