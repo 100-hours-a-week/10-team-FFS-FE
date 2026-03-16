@@ -12,28 +12,148 @@
   min-height: 100vh;
   margin: 0 auto;
   background-color: var(--color-bg-primary);
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0 40px rgba(123, 94, 248, 0.12);
+}
+
+/* 배경 로고 워터마크 */
+.app-layout__watermark {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  height: 260px;
+  object-fit: contain;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
+}
+
+@media (min-width: 430px) {
+  .app-layout__watermark {
+    /* 데스크탑에서 모바일 컨테이너(430px) 중앙에 위치 */
+    left: calc(50vw);
+  }
 }
 
 .app-layout__main {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .app-layout__main--with-nav {
   padding-bottom: var(--bottom-nav-height);
 }
 
-/* 큰 화면에서 양쪽 여백 효과 */
+/* 사이드바 - 모바일에서 숨김 */
+.app-layout__sidebar {
+  display: none;
+}
+
+/* 큰 화면 - 다크 코스믹 배경 (fixed로 스크롤 고정) */
 @media (min-width: 430px) {
   .app-layout {
     display: flex;
     justify-content: center;
+    background-color: var(--color-bg-web);
+    background-image:
+      radial-gradient(ellipse 60% 50% at 15% 50%, rgba(91, 108, 248, 0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 85% 50%, rgba(160, 64, 245, 0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 50% 10%, rgba(123, 94, 248, 0.10) 0%, transparent 60%);
+    background-attachment: fixed;
   }
-  
+
   .app-layout__container {
-    border-left: 1px solid var(--color-border-light);
-    border-right: 1px solid var(--color-border-light);
+    position: relative;
+    z-index: 1;
+    border-left: 1px solid rgba(123, 94, 248, 0.2);
+    border-right: 1px solid rgba(123, 94, 248, 0.2);
+    box-shadow:
+      0 0 60px rgba(123, 94, 248, 0.2),
+      0 0 120px rgba(91, 108, 248, 0.10);
+  }
+}
+
+/* 사이드바 - 충분한 너비일 때만 표시 */
+@media (min-width: 900px) {
+  .app-layout__sidebar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: calc(50vw - 215px);
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .app-layout__sidebar-inner {
+    margin-top: auto;
+    margin-right: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 60px;
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .app-layout__sidebar-logo {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    margin-bottom: 4px;
+  }
+
+  .app-layout__sidebar-brand {
+    font-size: 50px;
+    font-weight: var(--font-weight-bold);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+
+  .app-layout__sidebar-tagline {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  .app-layout__sidebar-features {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .app-layout__sidebar-features li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.38);
+  }
+
+  .app-layout__sidebar-features li::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    flex-shrink: 0;
   }
 }

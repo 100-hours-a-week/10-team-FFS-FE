@@ -142,10 +142,10 @@
 .feed-list-page__tabs {
   display: flex;
   position: sticky;
-  top: 52px; /* Header 높이에 맞춰서 조정 */
+  top: 52px;
   z-index: 10;
-  background-color: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  background-color: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .feed-list-page__tab {
@@ -155,14 +155,14 @@
   background: none;
   font-size: 15px;
   font-weight: 500;
-  color: #999;
+  color: var(--color-text-tertiary);
   cursor: pointer;
   position: relative;
   transition: color 0.2s;
 }
 
 .feed-list-page__tab--active {
-  color: #262626;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -173,7 +173,32 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: #262626;
+  background: var(--gradient-primary);
+  border-radius: 2px 2px 0 0;
+}
+
+/* 헤더 로고 */
+.feed-list-page__header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feed-list-page__header-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  object-fit: contain;
+}
+
+.feed-list-page__header-logo-text {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.3px;
 }
 
 /* 헤더 우상단 버튼 (DM / 로그인) */

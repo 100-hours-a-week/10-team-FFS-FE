@@ -6,6 +6,7 @@ import './Header.css';
 
 const Header = ({
   title,
+  titleElement,
   showBack = false,
   onBack,
   rightElement,
@@ -35,7 +36,7 @@ const Header = ({
       </div>
       
       <div className="header__center">
-        {title && <h1 className="header__title">{title}</h1>}
+        {titleElement || (title && <h1 className="header__title">{title}</h1>)}
       </div>
       
       <div className="header__right">

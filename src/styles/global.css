@@ -15,6 +15,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 웹(데스크탑) 배경 */
+@media (min-width: 430px) {
+  body {
+    background-color: var(--color-bg-web);
+  }
+}
+
 #root {
   min-height: 100vh;
   display: flex;
