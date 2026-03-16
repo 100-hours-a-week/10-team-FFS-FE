@@ -41,11 +41,15 @@
 }
 
 .bottom-nav__item:hover {
-  color: var(--color-text-secondary);
+  color: var(--color-primary-light);
 }
 
 .bottom-nav__item--active {
-  color: var(--color-text-primary);
+  color: var(--color-primary);
+}
+
+.bottom-nav__item--active .bottom-nav__icon {
+  filter: drop-shadow(0 0 6px rgba(123, 94, 248, 0.5));
 }
 
 .bottom-nav__icon {

@@ -35,8 +35,9 @@
 }
 
 .input:focus {
-  border-color: transparent;
-  box-shadow: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(123, 94, 248, 0.12);
+  outline: none;
 }
 
 .input:disabled {

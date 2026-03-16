@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
+import transparentLogo from '../assets/transparent_logo.png';
 import { ScrollToTopButton, LoginPromptModal } from '../components/common';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import { getFeeds, getFollowingFeeds } from '../api';
@@ -123,7 +124,12 @@ const FeedListPage = () => {
   return (
     <div className="feed-list-page">
       <Header
-        title="피드"
+        titleElement={
+          <div className="feed-list-page__header-logo">
+            <img src={transparentLogo} alt="KlosetLab" className="feed-list-page__header-logo-img" />
+            <span className="feed-list-page__header-logo-text">KlosetLab</span>
+          </div>
+        }
         rightElement={renderHeaderRight()}
       />
 

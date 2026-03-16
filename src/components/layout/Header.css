@@ -68,6 +68,7 @@
 .header__back:hover,
 .header__action:hover {
   background-color: var(--color-bg-secondary);
+  color: var(--color-primary);
 }
 
 .header__back:active,

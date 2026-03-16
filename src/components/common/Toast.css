@@ -18,14 +18,14 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: rgba(50, 50, 50, 0.95);
+  background-color: rgba(26, 22, 48, 0.92);
   color: var(--color-text-inverse);
   border-radius: var(--radius-lg);
   font-size: var(--font-size-sm);
   text-align: center;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   animation: toastIn 0.3s ease;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(123, 94, 248, 0.2);
 }
 
 .toast__message {
