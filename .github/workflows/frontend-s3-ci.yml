@@ -29,13 +29,15 @@ jobs:
           if [ "${{ github.ref_name }}" == "main" ]; then
             echo "ARTIFACT_NAME=frontend-build-prod-v2" >> $GITHUB_ENV
             echo "ENV_LABEL=Production" >> $GITHUB_ENV
-            echo "REACT_APP_BASE_URL_DEV=${{ secrets.V2_PROD_REACT_APP_BASE_URL }}" >> $GITHUB_ENV
-            echo "REACT_APP_CHAT_BASE_URL_DEV=${{ secrets.V2_PROD_REACT_APP_CHAT_BASE_URL }}" >> $GITHUB_ENV
+            echo "REACT_APP_KAKAO_REDIRECT_URI=${{ secrets.V2_PROD_REACT_APP_KAKAO_REDIRECT_URI }}" >> $GITHUB_ENV
+            echo "REACT_APP_BASE_URL=${{ secrets.V2_PROD_REACT_APP_BASE_URL }}" >> $GITHUB_ENV
+            echo "REACT_APP_CHAT_BASE_URL=${{ secrets.V2_PROD_REACT_APP_CHAT_BASE_URL }}" >> $GITHUB_ENV
           else
             echo "ARTIFACT_NAME=frontend-build-staging-v2" >> $GITHUB_ENV
             echo "ENV_LABEL=Staging" >> $GITHUB_ENV
-            echo "REACT_APP_BASE_URL_DEV=${{ secrets.V2_STAGING_REACT_APP_BASE_URL }}" >> $GITHUB_ENV
-            echo "REACT_APP_CHAT_BASE_URL_DEV=${{ secrets.V2_STAGING_REACT_APP_CHAT_BASE_URL }}" >> $GITHUB_ENV
+            echo "REACT_APP_KAKAO_REDIRECT_URI=${{ secrets.V2_STAGING_REACT_APP_KAKAO_REDIRECT_URI }}" >> $GITHUB_ENV
+            echo "REACT_APP_BASE_URL=${{ secrets.V2_STAGING_REACT_APP_BASE_URL }}" >> $GITHUB_ENV
+            echo "REACT_APP_CHAT_BASE_URL=${{ secrets.V2_STAGING_REACT_APP_CHAT_BASE_URL }}" >> $GITHUB_ENV
           fi
 
       - name: Install dependencies
@@ -45,11 +47,10 @@ jobs:
       - name: Build project
         id: build
         env:
-          REACT_APP_KAKAO_REDIRECT_URI_DEV: ${{ secrets.V2_STAGING_REACT_APP_KAKAO_REDIRECT_URI }}
-          REACT_APP_BASE_URL_PROD: ${{ secrets.V2_PROD_REACT_APP_BASE_URL }}
-          REACT_APP_KAKAO_REDIRECT_URI_PROD: ${{ secrets.V2_PROD_REACT_APP_KAKAO_REDIRECT_URI }}
+          REACT_APP_KAKAO_REDIRECT_URI: ${{ env.REACT_APP_KAKAO_REDIRECT_URI }}
           REACT_APP_KAKAO_CLIENT_ID: ${{ secrets.REACT_APP_KAKAO_CLIENT_ID }}
-          REACT_APP_CHAT_BASE_URL_PROD: ${{ secrets.V2_PROD_REACT_APP_CHAT_BASE_URL }}
+          REACT_APP_BASE_URL: ${{ env.REACT_APP_BASE_URL }}
+          REACT_APP_CHAT_BASE_URL: ${{ env.REACT_APP_CHAT_BASE_URL }}
         run: CI=false npm run build
 
       - name: Run tests
