@@ -77,7 +77,7 @@ const RootRedirect = () => {
     return <FullPageLoading />;
   }
 
-  return <Navigate to={isAuthenticated ? '/feed' : '/login'} replace />;
+  return <Navigate to="/feed" replace />;
 };
 
 function AppRoutes() {
