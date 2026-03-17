@@ -591,6 +591,16 @@ export const getOutfitRequestStatus = async (requestId) => {
   return apiRequest(`/outfits/requests/${requestId}`, {}, BASE_URL_V2);
 };
 
+/**
+ * 코디 결과 옷 상세 조회
+ * GET /api/v2/outfits/results/clothes?resultIds=1,2,3
+ * @param {number[]} resultIds - 코디 결과 ID 배열
+ * @returns {Promise<{code: number, message: string, data: {results: Array<{resultId: number, clothes: Array}>}}>}
+ */
+export const getOutfitResultClothes = async (resultIds) => {
+  return apiRequest(`/outfits/results/clothes?resultIds=${resultIds.join(',')}`, {}, BASE_URL_V2);
+};
+
 /* ==============================================
    AI 쇼핑 코디 추천 관련 API (v2)
    ============================================== */

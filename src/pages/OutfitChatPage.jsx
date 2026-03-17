@@ -8,6 +8,7 @@ import {
   getOutfitSessionDetail,
   createOutfitRequestV2,
   updateOutfitReactionV2,
+  getOutfitResultClothes,
 } from '../api';
 import {
   IoArrowUp,
@@ -94,8 +95,8 @@ const OutfitCard = ({ outfit, index, total, reaction, isReactable, onImageClick 
   return (
     <div className="outfit-chat__card">
       <div
-        className={`outfit-chat__card-image-wrap${isReactable ? ' outfit-chat__card-image-wrap--clickable' : ''}`}
-        onClick={isReactable ? onImageClick : undefined}
+        className="outfit-chat__card-image-wrap outfit-chat__card-image-wrap--clickable"
+        onClick={onImageClick}
       >
         {outfit.vtonImageUrl ? (
           <img
@@ -111,9 +112,9 @@ const OutfitCard = ({ outfit, index, total, reaction, isReactable, onImageClick 
             {reaction === 'GOOD' ? '👍' : '👎'}
           </span>
         )}
-        {isReactable && (
-          <span className="outfit-chat__card-tap-hint">탭하여 평가</span>
-        )}
+        <span className="outfit-chat__card-tap-hint">
+          {isReactable ? '탭하여 평가' : '탭하여 상세보기'}
+        </span>
       </div>
       <div className="outfit-chat__card-info">
         <span className="outfit-chat__card-label">코디 {index + 1}/{total}</span>
@@ -151,7 +152,12 @@ const OutfitChatPage = () => {
     open: false,
     outfits: [],
     index: 0,
+    isReactable: false,
   });
+
+  // 옷 상세 정보 캐시: { [resultId]: clothes[] }
+  const [clothesCache, setClothesCache] = useState({});
+  const [clothesLoading, setClothesLoading] = useState(false);
 
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -177,13 +183,39 @@ const OutfitChatPage = () => {
     }, 100);
   }, []);
 
+  // 옷 상세 정보 조회 헬퍼
+  const fetchClothesForOutfits = useCallback(async (outfits) => {
+    const resultIds = outfits
+      .map((o) => o.resultId)
+      .filter((id) => id && !clothesCache[id]);
+    if (resultIds.length === 0) {
+      return;
+    }
+
+    try {
+      setClothesLoading(true);
+      const res = await getOutfitResultClothes(resultIds);
+      const results = res.data?.results || [];
+      const newCache = {};
+      results.forEach((r) => {
+        newCache[r.resultId] = r.clothes;
+      });
+      setClothesCache((prev) => ({ ...prev, ...newCache }));
+    } catch (err) {
+      console.error('옷 상세 조회 실패:', err);
+    } finally {
+      setClothesLoading(false);
+    }
+  }, [clothesCache]);
+
   // 리뷰 모달 열기/닫기/네비게이션
-  const openReviewModal = useCallback((outfits, startIndex) => {
-    setReviewModal({ open: true, outfits, index: startIndex });
-  }, []);
+  const openReviewModal = useCallback((outfits, startIndex, isReactable) => {
+    setReviewModal({ open: true, outfits, index: startIndex, isReactable });
+    fetchClothesForOutfits(outfits);
+  }, [fetchClothesForOutfits]);
 
   const closeReviewModal = useCallback(() => {
-    setReviewModal({ open: false, outfits: [], index: 0 });
+    setReviewModal({ open: false, outfits: [], index: 0, isReactable: false });
   }, []);
 
   const reviewPrev = useCallback(() => {
@@ -289,12 +321,13 @@ const OutfitChatPage = () => {
           return prev;
         });
       } else if (status === 'SUCCESS' || status === 'success' || status === 'COMPLETED') {
+        const outfits = event.outfits || [];
         setMessages((prev) => {
           const updated = prev.filter((m) => m.type !== 'ai-loading');
           updated.push({
             type: 'ai',
             content: event.querySummary || event.aiMessage || '',
-            outfits: event.outfits || [],
+            outfits,
             createdAt: event.completedAt || new Date().toISOString(),
             turnNo: event.turnNo,
           });
@@ -302,6 +335,23 @@ const OutfitChatPage = () => {
         });
         setIsSubmitting(false);
         scrollToBottom();
+
+        // 옷 상세 정보 미리 캐싱
+        if (outfits.length > 0) {
+          const resultIds = outfits.map((o) => o.resultId).filter(Boolean);
+          if (resultIds.length > 0) {
+            getOutfitResultClothes(resultIds)
+              .then((res) => {
+                const results = res.data?.results || [];
+                const newCache = {};
+                results.forEach((r) => {
+                  newCache[r.resultId] = r.clothes;
+                });
+                setClothesCache((prev) => ({ ...prev, ...newCache }));
+              })
+              .catch((err) => console.error('옷 상세 조회 실패:', err));
+          }
+        }
       } else if (status === 'CLARIFICATION_NEEDED' || status === 'clarification_needed') {
         setMessages((prev) => {
           const updated = prev.filter((m) => m.type !== 'ai-loading');
@@ -489,7 +539,7 @@ const OutfitChatPage = () => {
                               total={msg.outfits.length}
                               reaction={reactions[outfit.resultId] || 'NONE'}
                               isReactable={isLatestTurn}
-                              onImageClick={() => openReviewModal(msg.outfits, oIdx)}
+                              onImageClick={() => openReviewModal(msg.outfits, oIdx, isLatestTurn)}
                             />
                           ))}
                         </div>
@@ -585,31 +635,74 @@ const OutfitChatPage = () => {
               ))}
             </div>
 
-            {/* 리액션 버튼 */}
-            <div className="outfit-review__actions">
-              <button
-                className={`outfit-review__reaction-btn${currentReviewReaction === 'GOOD' ? ' outfit-review__reaction-btn--good-active' : ''}`}
-                onClick={() => handleReaction(currentReviewOutfit.resultId, 'GOOD')}
-              >
-                {currentReviewReaction === 'GOOD' ? (
-                  <IoThumbsUp size={28} />
+            {/* 착용 아이템 정보 */}
+            {currentReviewOutfit.resultId && (
+              <div className="outfit-review__clothes">
+                <span className="outfit-review__clothes-title">착용 아이템</span>
+                {clothesLoading && !clothesCache[currentReviewOutfit.resultId] ? (
+                  <div className="outfit-review__clothes-loading">
+                    <Spinner size="small" />
+                  </div>
+                ) : clothesCache[currentReviewOutfit.resultId]?.length > 0 ? (
+                  <div className="outfit-review__clothes-list">
+                    {clothesCache[currentReviewOutfit.resultId].map((item) => (
+                      <div
+                        key={item.id}
+                        className="outfit-review__clothes-item"
+                        onClick={() => {
+                          closeReviewModal();
+                          navigate(`/clothes/${item.id}`);
+                        }}
+                      >
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name || '옷'}
+                          className="outfit-review__clothes-image"
+                        />
+                        <span className="outfit-review__clothes-name">
+                          {item.name || '이름 없음'}
+                        </span>
+                        <span className="outfit-review__clothes-category">
+                          {item.category || ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <IoThumbsUpOutline size={28} />
+                  !clothesLoading && (
+                    <span className="outfit-review__clothes-empty">아이템 정보 없음</span>
+                  )
                 )}
-                <span>좋아요</span>
-              </button>
-              <button
-                className={`outfit-review__reaction-btn${currentReviewReaction === 'BAD' ? ' outfit-review__reaction-btn--bad-active' : ''}`}
-                onClick={() => handleReaction(currentReviewOutfit.resultId, 'BAD')}
-              >
-                {currentReviewReaction === 'BAD' ? (
-                  <IoThumbsDown size={28} />
-                ) : (
-                  <IoThumbsDownOutline size={28} />
-                )}
-                <span>별로예요</span>
-              </button>
-            </div>
+              </div>
+            )}
+
+            {/* 리액션 버튼 — 최신 턴에서만 노출 */}
+            {reviewModal.isReactable && (
+              <div className="outfit-review__actions">
+                <button
+                  className={`outfit-review__reaction-btn${currentReviewReaction === 'GOOD' ? ' outfit-review__reaction-btn--good-active' : ''}`}
+                  onClick={() => handleReaction(currentReviewOutfit.resultId, 'GOOD')}
+                >
+                  {currentReviewReaction === 'GOOD' ? (
+                    <IoThumbsUp size={28} />
+                  ) : (
+                    <IoThumbsUpOutline size={28} />
+                  )}
+                  <span>좋아요</span>
+                </button>
+                <button
+                  className={`outfit-review__reaction-btn${currentReviewReaction === 'BAD' ? ' outfit-review__reaction-btn--bad-active' : ''}`}
+                  onClick={() => handleReaction(currentReviewOutfit.resultId, 'BAD')}
+                >
+                  {currentReviewReaction === 'BAD' ? (
+                    <IoThumbsDown size={28} />
+                  ) : (
+                    <IoThumbsDownOutline size={28} />
+                  )}
+                  <span>별로예요</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

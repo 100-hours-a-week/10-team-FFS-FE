@@ -405,6 +405,88 @@
   transform: scale(1.25);
 }
 
+/* 착용 아이템 정보 */
+.outfit-review__clothes {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.outfit-review__clothes-title {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.outfit-review__clothes-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.outfit-review__clothes-list {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  padding: var(--spacing-xs) 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.outfit-review__clothes-list::-webkit-scrollbar {
+  display: none;
+}
+
+.outfit-review__clothes-item {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  width: 64px;
+}
+
+.outfit-review__clothes-item:active {
+  opacity: 0.7;
+}
+
+.outfit-review__clothes-image {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.outfit-review__clothes-name {
+  font-size: 10px;
+  color: white;
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outfit-review__clothes-category {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outfit-review__clothes-empty {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: var(--spacing-xs) 0;
+}
+
 /* 리액션 버튼 */
 .outfit-review__actions {
   display: flex;
