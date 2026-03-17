@@ -6,6 +6,10 @@ on:
     types: [completed]
     branches: [dev, main]
 
+permissions:
+  id-token: write   # OIDC 토큰 발급에 필요
+  contents: read
+
 jobs:
   cd:
     name: CD - Production
@@ -25,8 +29,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ap-northeast-2
 
       # index.html은 캐시 없이, 나머지 정적 파일은 1년 캐시
