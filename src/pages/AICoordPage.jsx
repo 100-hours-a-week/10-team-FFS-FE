@@ -4,28 +4,36 @@ import { Header } from '../components/layout';
 import { Spinner, Button } from '../components/common';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
-import { createOutfitRecommendation, getOutfitHistories, updateOutfitReaction, getMyClothesCount } from '../api';
-import { downloadImage } from '../utils/helpers';
-import {
-  IoArrowDown,
-  IoChevronBack,
-  IoChevronForward,
-  IoDownloadOutline,
-  IoThumbsUp,
-  IoThumbsUpOutline,
-  IoThumbsDown,
-  IoThumbsDownOutline,
-  IoRefresh,
-  IoAddCircleOutline
-} from 'react-icons/io5';
+import { getOutfitSessions, createOutfitRequestV2, getMyClothesCount } from '../api';
+import { IoArrowUp } from 'react-icons/io5';
 import './AICoordPage.css';
 
-// 추천 문장 (고정)
-const SUGGESTED_QUERIES = [
-  '내일 결혼식장 갈 건데 무슨 옷 입을까?',
-  '다음 주에 소개팅 갈 때 입을 옷 추천해 줘',
-  '비온다... 뭐 입지?'
-];
+// 상대 시간 포맷
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) {
+    return '';
+  }
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHour = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) {
+    return '방금 전';
+  }
+  if (diffMin < 60) {
+    return `${diffMin}분 전`;
+  }
+  if (diffHour < 24) {
+    return `${diffHour}시간 전`;
+  }
+  if (diffDay < 7) {
+    return `${diffDay}일 전`;
+  }
+  return date.toLocaleDateString('ko-KR');
+};
 
 // 탭 컴포넌트 (공통)
 const AiTabs = ({ activeTab, onTabChange }) => (
@@ -50,21 +58,17 @@ const AiTabs = ({ activeTab, onTabChange }) => (
 const AICoordPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { success, error: showError } = useToast();
+  const { error: showError } = useToast();
 
-  // 진입 화면 상태
+  // 상태
   const [query, setQuery] = useState('');
-  const [searchHistories, setSearchHistories] = useState([]);
   const [hasClothes, setHasClothes] = useState(true);
   const [isCheckingClothes, setIsCheckingClothes] = useState(true);
-
-  // 결과 화면 상태
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [result, setResult] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [reactions, setReactions] = useState({}); // { outfitId: 'GOOD' | 'BAD' | 'NONE' }
-  const [lastQuery, setLastQuery] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [page, setPage] = useState(0);
+  const [isLastPage, setIsLastPage] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 옷장에 옷이 있는지 확인
   useEffect(() => {
@@ -82,24 +86,41 @@ const AICoordPage = () => {
     checkClothes();
   }, []);
 
-  // 검색 기록 조회
-  useEffect(() => {
-    const fetchHistories = async () => {
-      try {
-        const response = await getOutfitHistories();
-        const histories = response.data?.requestHistories || [];
-        setSearchHistories(histories.slice(0, 3));
-      } catch (err) {
-        // 검색 기록 조회 실패는 무시
+  // 세션 목록 조회
+  const fetchSessions = useCallback(async (pageNum = 0, append = false) => {
+    setIsLoadingSessions(true);
+    try {
+      const response = await getOutfitSessions(pageNum, 10);
+      const data = response.data;
+      const content = data?.content || [];
+      if (append) {
+        setSessions(prev => [...prev, ...content]);
+      } else {
+        setSessions(content);
       }
-    };
-
-    if (hasClothes && !result) {
-      fetchHistories();
+      setIsLastPage(data?.last ?? true);
+      setPage(pageNum);
+    } catch (err) {
+      console.error('세션 목록 조회 실패:', err);
+    } finally {
+      setIsLoadingSessions(false);
     }
-  }, [hasClothes, result]);
+  }, []);
 
-  // 입력값 변경 (최대 100자 제한)
+  useEffect(() => {
+    if (hasClothes && !isCheckingClothes) {
+      fetchSessions(0);
+    }
+  }, [hasClothes, isCheckingClothes, fetchSessions]);
+
+  // 더 불러오기
+  const handleLoadMore = () => {
+    if (!isLastPage && !isLoadingSessions) {
+      fetchSessions(page + 1, true);
+    }
+  };
+
+  // 입력값 변경 (최대 100자)
   const handleInputChange = (e) => {
     const value = e.target.value;
     if (value.length <= 100) {
@@ -107,9 +128,9 @@ const AICoordPage = () => {
     }
   };
 
-  // 검색 실행
-  const handleSearch = useCallback(async (searchQuery = query) => {
-    const trimmedQuery = searchQuery.trim();
+  // 새 세션 생성 (입력 제출)
+  const handleSubmit = useCallback(async () => {
+    const trimmedQuery = query.trim();
 
     if (!trimmedQuery) {
       showError('검색어를 입력해주세요.');
@@ -117,35 +138,27 @@ const AICoordPage = () => {
     }
 
     if (trimmedQuery.length < 2) {
-      showError('2자 이상 입력해주세요');
+      showError('2자 이상 입력해주세요.');
       return;
     }
 
-    setIsLoading(true);
-    setIsError(false);
-    setResult(null);
-    setLastQuery(trimmedQuery);
-
+    setIsSubmitting(true);
     try {
-      const response = await createOutfitRecommendation(trimmedQuery);
-      const data = response.data;
-      setResult({
-        summary: data.outfitSummary,
-        outfits: data.outfits || []
+      const response = await createOutfitRequestV2(trimmedQuery);
+      const { sessionId } = response.data;
+      navigate(`/ai-coordi/${sessionId}`, {
+        state: { initialQuery: trimmedQuery },
       });
-      setCurrentIndex(0);
-      setReactions({});
     } catch (err) {
-      setIsError(true);
+      showError(err.message || '코디 요청에 실패했어요.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
-  }, [query, showError]);
+  }, [query, showError, navigate]);
 
-  // 추천 문장 또는 검색 기록 클릭
-  const handleSuggestionClick = (text) => {
-    setQuery(text);
-    handleSearch(text);
+  // 세션 클릭
+  const handleSessionClick = (sessionId) => {
+    navigate(`/ai-coordi/${sessionId}`);
   };
 
   // 옷장 이동
@@ -153,78 +166,11 @@ const AICoordPage = () => {
     navigate(`/closet/${user?.id}`);
   };
 
-  // 캐러셀 네비게이션
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (result && currentIndex < result.outfits.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    }
-  };
-
-  // 좋아요/싫어요 반응
-  const handleReaction = async (type) => {
-    if (!result || !result.outfits[currentIndex]) {
-      return;
-    }
-
-    const outfit = result.outfits[currentIndex];
-    const outfitId = outfit.outfitId;
-    const currentReaction = reactions[outfitId] || 'NONE';
-
-    let newReaction;
-    if (currentReaction === type) {
-      newReaction = 'NONE';
-    } else {
-      newReaction = type;
-    }
-
-    setReactions(prev => ({
-      ...prev,
-      [outfitId]: newReaction
-    }));
-
-    try {
-      await updateOutfitReaction(outfitId, newReaction);
-    } catch (err) {
-      setReactions(prev => ({
-        ...prev,
-        [outfitId]: currentReaction
-      }));
-    }
-  };
-
-  // 옷 상세 페이지로 이동
-  const handleClothesClick = (clothesId) => {
-    navigate(`/clothes/${clothesId}`);
-  };
-
-  // 현재 코디 다시 추천받기
-  const handleRetry = () => {
-    if (lastQuery) {
-      handleSearch(lastQuery);
-    }
-  };
-
   // 탭 전환
   const handleTabChange = (tab) => {
     if (tab === 'shop') {
       navigate('/ai-shop');
     }
-  };
-
-  // 새로운 코디 추천받기 (진입 화면으로)
-  const handleNewSearch = () => {
-    setResult(null);
-    setIsError(false);
-    setQuery('');
-    setLastQuery('');
-    setCurrentIndex(0);
-    setReactions({});
   };
 
   // 로딩 중 체크
@@ -262,227 +208,78 @@ const AICoordPage = () => {
     );
   }
 
-  // 로딩 중
-  if (isLoading) {
-    return (
-      <div className="ai-coord-page">
-        <Header title="AI 코디 추천" />
-        <div className="ai-coord-page__content">
-          <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
-          <div className="ai-coord-page__loading">
-            <Spinner size="large" />
-            <p>코디를 추천하고 있어요...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 에러 상태
-  if (isError) {
-    return (
-      <div className="ai-coord-page">
-        <Header title="AI 코디 추천" />
-        <div className="ai-coord-page__content">
-          <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
-          <div className="ai-coord-page__error">
-            <p className="ai-coord-page__error-message">
-              추천에 실패했어요. 다시 시도해주세요.
-            </p>
-            <div className="ai-coord-page__error-actions">
-              <Button onClick={handleRetry} variant="outline">
-                다시 시도할래요
-              </Button>
-              <Button onClick={handleNewSearch} variant="outline">
-                새로운 코디를 추천받으시겠어요?
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 결과 화면
-  if (result && result.outfits.length > 0) {
-    const currentOutfit = result.outfits[currentIndex];
-    const currentReaction = reactions[currentOutfit.outfitId] || 'NONE';
-
-    return (
-      <div className="ai-coord-page">
-        <Header title="AI 코디 추천" />
-        <div className="ai-coord-page__content">
-          <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
-          {/* AI 변환 문구 */}
-          <div className="ai-coord-page__summary">
-            <p>{result.summary}</p>
-          </div>
-          
-
-          {/* 코디 카드 */}
-          <div className="ai-coord-page__card">
-
-
-            {/* 캐러셀 */}
-            <div className="ai-coord-page__carousel">
-              {/* 이전 버튼 */}
-              <button
-                className={`ai-coord-page__nav-btn ai-coord-page__nav-btn--prev ${currentIndex === 0 ? 'ai-coord-page__nav-btn--disabled' : ''}`}
-                onClick={handlePrev}
-                disabled={currentIndex === 0}
-                aria-label="이전 코디"
-              >
-                <IoChevronBack size={24} />
-              </button>
-
-              {/* 이미지 영역 */}
-              <div className="ai-coord-page__image-container">
-                <img
-                  src={currentOutfit.imageUrl}
-                  alt="AI 추천 코디"
-                  className="ai-coord-page__outfit-image"
-                />
-              </div>
-
-              {/* 다음 버튼 */}
-              <button
-                className={`ai-coord-page__nav-btn ai-coord-page__nav-btn--next ${currentIndex === result.outfits.length - 1 ? 'ai-coord-page__nav-btn--disabled' : ''}`}
-                onClick={handleNext}
-                disabled={currentIndex === result.outfits.length - 1}
-                aria-label="다음 코디"
-              >
-                <IoChevronForward size={24} />
-              </button>
-            </div>
-
-            {/* AI 코멘트 */}
-            <div className="ai-coord-page__comment">
-              <p>{currentOutfit.aiComment}</p>
-            </div>
-
-            {/* 액션 버튼 영역 */}
-            <div className="ai-coord-page__actions">
-              <div className="ai-coord-page__feedback-btns">
-                <button
-                  className={`ai-coord-page__feedback-btn ${currentReaction === 'GOOD' ? 'ai-coord-page__feedback-btn--active' : ''}`}
-                  onClick={() => handleReaction('GOOD')}
-                  aria-label="좋아요"
-                >
-                  {currentReaction === 'GOOD' ? <IoThumbsUp size={24} /> : <IoThumbsUpOutline size={24} />}
-                </button>
-                <button
-                  className={`ai-coord-page__feedback-btn ${currentReaction === 'BAD' ? 'ai-coord-page__feedback-btn--active' : ''}`}
-                  onClick={() => handleReaction('BAD')}
-                  aria-label="싫어요"
-                >
-                  {currentReaction === 'BAD' ? <IoThumbsDown size={24} /> : <IoThumbsDownOutline size={24} />}
-                </button>
-              </div>
-            </div>
-
-            {/* 인디케이터 */}
-            {result.outfits.length > 1 && (
-              <div className="ai-coord-page__indicators">
-                {result.outfits.map((_, index) => (
-                  <span
-                    key={index}
-                    className={`ai-coord-page__indicator ${index === currentIndex ? 'ai-coord-page__indicator--active' : ''}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 하단 버튼 영역 */}
-          <div className="ai-coord-page__bottom-actions">
-            <button
-              className="ai-coord-page__action-btn"
-              onClick={handleRetry}
-            >
-              <IoRefresh size={20} />
-              현재 코디 다시 추천받을래요
-            </button>
-            <button
-              className="ai-coord-page__action-btn"
-              onClick={handleNewSearch}
-            >
-              새로운 코디를 추천받으시겠어요?
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 진입 화면 (기본)
   return (
     <div className="ai-coord-page">
       <Header title="AI 코디 추천" />
       <div className="ai-coord-page__content">
         <AiTabs activeTab="coordi" onTabChange={handleTabChange} />
-        {/* 타이틀 */}
-        <h2 className="ai-coord-page__title">TPO를 입력해보세요</h2>
 
-        {/* 검색 입력 */}
+        {/* 입력창 */}
         <div className="ai-coord-page__search">
           <div className="ai-coord-page__search-input-wrapper">
             <input
               type="text"
               className="ai-coord-page__search-input"
-              placeholder=""
+              placeholder="예) 면접룩 추천해줘"
               value={query}
               onChange={handleInputChange}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isSubmitting) {
+                  handleSubmit();
                 }
               }}
               maxLength={100}
+              disabled={isSubmitting}
             />
             <button
               className="ai-coord-page__search-btn"
-              onClick={() => handleSearch()}
-              disabled={!query.trim()}
-              aria-label="검색"
+              onClick={handleSubmit}
+              disabled={!query.trim() || isSubmitting}
+              aria-label="전송"
             >
-              <IoArrowDown size={20} />
+              {isSubmitting ? <Spinner size="small" /> : <IoArrowUp size={20} />}
             </button>
           </div>
         </div>
 
-        {/* 추천 문장 */}
-        <div className="ai-coord-page__section">
-          <h3 className="ai-coord-page__section-title">추천 문장</h3>
-          <div className="ai-coord-page__suggestions">
-            {SUGGESTED_QUERIES.map((suggestion, index) => (
-              <button
-                key={index}
-                className="ai-coord-page__suggestion"
-                onClick={() => handleSuggestionClick(suggestion)}
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 세션 목록 */}
+        <div className="ai-coord-page__session-list">
+          {sessions.length === 0 && !isLoadingSessions && (
+            <p className="ai-coord-page__session-empty">
+              아직 대화 기록이 없어요. 위 입력창에 원하는 코디를 입력해보세요!
+            </p>
+          )}
 
-        {/* 나의 검색 기록 */}
-        <div className="ai-coord-page__section ai-coord-page__section--right">
-          <h3 className="ai-coord-page__section-title">나의 검색 기록</h3>
-          {searchHistories.length > 0 ? (
-            <div className="ai-coord-page__history">
-              {searchHistories.map((item) => (
-                <button
-                  key={item.requestId}
-                  className="ai-coord-page__history-item"
-                  onClick={() => handleSuggestionClick(item.content)}
-                >
-                  {item.content}
-                </button>
-              ))}
+          {sessions.map((session) => (
+            <button
+              key={session.sessionId}
+              className="ai-coord-page__session-item"
+              onClick={() => handleSessionClick(session.sessionId)}
+            >
+              <span className="ai-coord-page__session-title">
+                {session.title || '코디 추천'}
+              </span>
+              <span className="ai-coord-page__session-time">
+                {formatRelativeTime(session.updatedAt || session.createdAt)}
+              </span>
+            </button>
+          ))}
+
+          {/* 더 불러오기 */}
+          {!isLastPage && sessions.length > 0 && (
+            <button
+              className="ai-coord-page__load-more"
+              onClick={handleLoadMore}
+              disabled={isLoadingSessions}
+            >
+              {isLoadingSessions ? <Spinner size="small" /> : '더 보기'}
+            </button>
+          )}
+
+          {isLoadingSessions && sessions.length === 0 && (
+            <div className="ai-coord-page__loading">
+              <Spinner size="large" />
             </div>
-          ) : (
-            <p className="ai-coord-page__history-empty">아직 검색 기록이 없습니다</p>
           )}
         </div>
       </div>

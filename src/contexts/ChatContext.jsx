@@ -23,10 +23,20 @@ export const ChatProvider = ({ children }) => {
   const subscriptionsRef = useRef({});
   // ref 사용: STOMP 클로저 안에서 최신값을 읽어야 하므로 state 대신 ref
   const activeRoomIdRef = useRef(null);
+  const outfitEventHandlerRef = useRef(null);
   const myUserId = user?.id ?? null;
 
   const setActiveRoomId = useCallback((id) => {
     activeRoomIdRef.current = id ?? null;
+  }, []);
+
+  // outfit-events 콜백 등록/해제
+  const setOutfitEventHandler = useCallback((callback) => {
+    outfitEventHandlerRef.current = callback;
+  }, []);
+
+  const clearOutfitEventHandler = useCallback(() => {
+    outfitEventHandlerRef.current = null;
   }, []);
 
   // STOMP 연결 해제
@@ -117,6 +127,18 @@ export const ChatProvider = ({ children }) => {
           setLatestRoomUpdate({ ...body, _ts: Date.now() });
         });
 
+        // outfit-events 구독 (AI 코디 멀티턴)
+        client.subscribe('/user/queue/outfit-events', (message) => {
+          try {
+            const body = JSON.parse(message.body);
+            if (outfitEventHandlerRef.current) {
+              outfitEventHandlerRef.current(body);
+            }
+          } catch (_) {
+            console.error('outfit-events 파싱 실패:', message.body);
+          }
+        });
+
         // 에러 구독 — clientMessageId로 전송 실패 전환에 사용
         client.subscribe('/user/queue/errors', (message) => {
           try {
@@ -164,6 +186,8 @@ export const ChatProvider = ({ children }) => {
     fetchUnreadStatus,
     setActiveRoomId,
     stompConnected,
+    setOutfitEventHandler,
+    clearOutfitEventHandler,
   };
 
   return (

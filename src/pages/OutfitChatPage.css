@@ -1,0 +1,283 @@
+/* OutfitChatPage — 채팅형 코디 추천 */
+
+.outfit-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background-color: var(--color-bg-primary);
+  max-width: var(--max-width-app);
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* 메시지 래퍼 */
+.outfit-chat__messages-wrapper {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.outfit-chat__messages {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.outfit-chat__center-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* 말풍선 래퍼 */
+.outfit-chat__bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  gap: 4px;
+}
+
+.outfit-chat__bubble-wrap--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.outfit-chat__bubble-wrap--ai {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+/* 말풍선 */
+.outfit-chat__bubble {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.outfit-chat__bubble--user {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.outfit-chat__bubble--ai {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.outfit-chat__bubble-text {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.outfit-chat__bubble-time {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+/* 로딩 인디케이터 */
+.outfit-chat__loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.outfit-chat__loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.outfit-chat__loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-text-tertiary);
+  animation: outfit-chat-dot-bounce 1.2s infinite;
+}
+
+.outfit-chat__loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.outfit-chat__loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes outfit-chat-dot-bounce {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.outfit-chat__loading-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* 코디 카드 가로 스크롤 */
+.outfit-chat__cards-scroll {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  padding: var(--spacing-sm) 0;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.outfit-chat__cards-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 코디 카드 */
+.outfit-chat__card {
+  flex-shrink: 0;
+  width: 220px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-primary);
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
+.outfit-chat__card-image {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  display: block;
+}
+
+.outfit-chat__card-comment {
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+  margin: 0;
+}
+
+/* 카드 내 옷 목록 */
+.outfit-chat__card-clothes {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: 0 var(--spacing-sm) var(--spacing-sm);
+  overflow-x: auto;
+}
+
+.outfit-chat__card-clothes::-webkit-scrollbar {
+  display: none;
+}
+
+.outfit-chat__card-clothes-item {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.outfit-chat__card-clothes-item img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-tertiary);
+}
+
+.outfit-chat__card-clothes-item span {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  max-width: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 카드 피드백 버튼 */
+.outfit-chat__card-feedback {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: 0 var(--spacing-sm) var(--spacing-sm);
+}
+
+.outfit-chat__feedback-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.outfit-chat__feedback-btn--active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+/* 하단 입력창 */
+.outfit-chat__input-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-primary);
+}
+
+.outfit-chat__text-input {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  outline: none;
+  background-color: var(--color-bg-secondary);
+}
+
+.outfit-chat__text-input:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-primary);
+}
+
+.outfit-chat__text-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.outfit-chat__send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.outfit-chat__send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
