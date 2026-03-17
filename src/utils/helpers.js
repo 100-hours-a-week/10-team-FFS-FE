@@ -198,6 +198,59 @@ export const copyToClipboard = async (text) => {
   }
 };
 
+// S3 이미지 URL을 placeholder로 교체 (로컬 테스트용)
+const PLACEHOLDER_IMAGE = 'https://picsum.photos/id/237/600/400';
+const IMAGE_KEY_PATTERN = /image/i;
+
+/**
+ * API 응답 데이터 내 모든 이미지 URL을 placeholder로 교체
+ * REACT_APP_USE_PLACEHOLDER_IMAGES=true 일 때만 동작
+ * @param {*} data - API 응답 데이터 (객체, 배열, 원시값)
+ * @returns {*} - 이미지 URL이 교체된 데이터
+ */
+export const replaceImageUrls = (data) => {
+  if (process.env.REACT_APP_USE_PLACEHOLDER_IMAGES !== 'true') {
+    return data;
+  }
+  return replaceImageUrlsRecursive(data);
+};
+
+const replaceImageUrlsRecursive = (data) => {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map((item) => replaceImageUrlsRecursive(item));
+  }
+
+  if (typeof data === 'object') {
+    const result = {};
+    for (const key of Object.keys(data)) {
+      const value = data[key];
+      if (IMAGE_KEY_PATTERN.test(key)) {
+        if (typeof value === 'string' && value.startsWith('http')) {
+          result[key] = PLACEHOLDER_IMAGE;
+        } else if (value === null || value === '') {
+          // null/빈 이미지 URL도 placeholder로 교체 (로컬 테스트용)
+          result[key] = PLACEHOLDER_IMAGE;
+        } else if (Array.isArray(value)) {
+          result[key] = value.map((item) =>
+            typeof item === 'string' && item.startsWith('http') ? PLACEHOLDER_IMAGE : replaceImageUrlsRecursive(item)
+          );
+        } else {
+          result[key] = replaceImageUrlsRecursive(value);
+        }
+      } else {
+        result[key] = replaceImageUrlsRecursive(value);
+      }
+    }
+    return result;
+  }
+
+  return data;
+};
+
 // 이미지 다운로드
 export const downloadImage = async (imageUrl, filename = 'download.png') => {
   try {

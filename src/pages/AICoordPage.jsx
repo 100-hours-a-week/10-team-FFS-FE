@@ -5,7 +5,7 @@ import { Spinner, Button } from '../components/common';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getOutfitSessions, createOutfitRequestV2, getMyClothesCount } from '../api';
-import { IoArrowUp } from 'react-icons/io5';
+import { IoArrowDown } from 'react-icons/io5';
 import './AICoordPage.css';
 
 // 상대 시간 포맷
@@ -92,13 +92,13 @@ const AICoordPage = () => {
     try {
       const response = await getOutfitSessions(pageNum, 10);
       const data = response.data;
-      const content = data?.content || [];
+      const list = data?.sessions || [];
       if (append) {
-        setSessions(prev => [...prev, ...content]);
+        setSessions(prev => [...prev, ...list]);
       } else {
-        setSessions(content);
+        setSessions(list);
       }
-      setIsLastPage(data?.last ?? true);
+      setIsLastPage(!(data?.hasNext ?? false));
       setPage(pageNum);
     } catch (err) {
       console.error('세션 목록 조회 실패:', err);
@@ -216,6 +216,7 @@ const AICoordPage = () => {
 
         {/* 입력창 */}
         <div className="ai-coord-page__search">
+          <h2 className="ai-coord-page__search-title">TPO를 입력해보세요</h2>
           <div className="ai-coord-page__search-input-wrapper">
             <input
               type="text"
@@ -237,7 +238,7 @@ const AICoordPage = () => {
               disabled={!query.trim() || isSubmitting}
               aria-label="전송"
             >
-              {isSubmitting ? <Spinner size="small" /> : <IoArrowUp size={20} />}
+              {isSubmitting ? <Spinner size="small" /> : <IoArrowDown size={20} />}
             </button>
           </div>
         </div>
@@ -260,7 +261,7 @@ const AICoordPage = () => {
                 {session.title || '코디 추천'}
               </span>
               <span className="ai-coord-page__session-time">
-                {formatRelativeTime(session.updatedAt || session.createdAt)}
+                {formatRelativeTime(session.lastActivityAt)}
               </span>
             </button>
           ))}

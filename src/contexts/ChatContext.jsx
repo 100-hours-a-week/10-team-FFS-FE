@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { Client } from '@stomp/stompjs';
 import { useAuth } from './AuthContext';
 import { getAccessToken, getUnreadChatStatus, getWsUrl } from '../api';
+import { replaceImageUrls } from '../utils/helpers';
 
 const ChatContext = createContext(null);
 
@@ -56,7 +57,7 @@ export const ChatProvider = ({ children }) => {
     }
     const destination = `/topic/room/${roomId}`;
     const sub = client.subscribe(destination, (message) => {
-      const body = JSON.parse(message.body);
+      const body = replaceImageUrls(JSON.parse(message.body));
       callback(body);
     });
     subscriptionsRef.current[roomId] = sub;
@@ -130,7 +131,7 @@ export const ChatProvider = ({ children }) => {
         // outfit-events 구독 (AI 코디 멀티턴)
         client.subscribe('/user/queue/outfit-events', (message) => {
           try {
-            const body = JSON.parse(message.body);
+            const body = replaceImageUrls(JSON.parse(message.body));
             if (outfitEventHandlerRef.current) {
               outfitEventHandlerRef.current(body);
             }

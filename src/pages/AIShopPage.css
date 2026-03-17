@@ -72,6 +72,12 @@
   outline: none;
 }
 
+.ai-shop-page__search-input:focus {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
 .ai-shop-page__search-input::placeholder {
   color: var(--color-text-placeholder);
 }

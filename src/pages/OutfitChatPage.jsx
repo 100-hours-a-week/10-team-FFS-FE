@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Spinner } from '../components/common';
 import { useToast } from '../contexts/ToastContext';
@@ -15,6 +15,9 @@ import {
   IoThumbsUpOutline,
   IoThumbsDown,
   IoThumbsDownOutline,
+  IoChevronBack,
+  IoChevronForward,
+  IoClose,
 } from 'react-icons/io5';
 import './OutfitChatPage.css';
 
@@ -39,10 +42,10 @@ const turnsToMessages = (turns) => {
   }
 
   turns.forEach((turn) => {
-    // 사용자 메시지
+    // 사용자 메시지 — API 응답 필드: requestText
     messages.push({
       type: 'user',
-      content: turn.userMessage || turn.content || '',
+      content: turn.requestText || '',
       createdAt: turn.createdAt,
       turnNo: turn.turnNo,
     });
@@ -51,7 +54,7 @@ const turnsToMessages = (turns) => {
     if (turn.status === 'SUCCESS' || turn.status === 'COMPLETED') {
       messages.push({
         type: 'ai',
-        content: turn.querySummary || turn.aiMessage || '',
+        content: turn.querySummary || '',
         outfits: turn.outfits || [],
         createdAt: turn.completedAt || turn.createdAt,
         turnNo: turn.turnNo,
@@ -59,7 +62,7 @@ const turnsToMessages = (turns) => {
     } else if (turn.status === 'CLARIFICATION_NEEDED') {
       messages.push({
         type: 'ai',
-        content: turn.aiMessage || '질문을 좀 더 구체적으로 해주세요.',
+        content: turn.querySummary || '질문을 좀 더 구체적으로 해주세요.',
         outfits: [],
         createdAt: turn.completedAt || turn.createdAt,
         turnNo: turn.turnNo,
@@ -87,63 +90,37 @@ const turnsToMessages = (turns) => {
 };
 
 // 코디 카드 컴포넌트
-const OutfitCard = ({ outfit, reaction, onReaction }) => {
-  const navigate = useNavigate();
-
-  const handleClothesClick = (clothesId) => {
-    if (clothesId) {
-      navigate(`/clothes/${clothesId}`);
-    }
-  };
-
+const OutfitCard = ({ outfit, index, total, reaction, isReactable, onImageClick }) => {
   return (
     <div className="outfit-chat__card">
-      {outfit.imageUrl && (
-        <img
-          src={outfit.imageUrl}
-          alt="AI 추천 코디"
-          className="outfit-chat__card-image"
-        />
-      )}
-      {outfit.aiComment && (
-        <p className="outfit-chat__card-comment">{outfit.aiComment}</p>
-      )}
-      {/* 사용된 옷 목록 */}
-      {outfit.clothes && outfit.clothes.length > 0 && (
-        <div className="outfit-chat__card-clothes">
-          {outfit.clothes.map((item, idx) => (
-            <div
-              key={item.clothesId || idx}
-              className="outfit-chat__card-clothes-item"
-              onClick={() => handleClothesClick(item.clothesId)}
-            >
-              {item.imageUrl && (
-                <img src={item.imageUrl} alt={item.name || '옷'} />
-              )}
-              {item.name && <span>{item.name}</span>}
-            </div>
-          ))}
-        </div>
-      )}
-      {/* 피드백 버튼 */}
-      {(outfit.outfitId || outfit.feedbackId) && (
-        <div className="outfit-chat__card-feedback">
-          <button
-            className={`outfit-chat__feedback-btn${reaction === 'GOOD' ? ' outfit-chat__feedback-btn--active' : ''}`}
-            onClick={() => onReaction(outfit.outfitId || outfit.feedbackId, 'GOOD')}
-            aria-label="좋아요"
-          >
-            {reaction === 'GOOD' ? <IoThumbsUp size={18} /> : <IoThumbsUpOutline size={18} />}
-          </button>
-          <button
-            className={`outfit-chat__feedback-btn${reaction === 'BAD' ? ' outfit-chat__feedback-btn--active' : ''}`}
-            onClick={() => onReaction(outfit.outfitId || outfit.feedbackId, 'BAD')}
-            aria-label="싫어요"
-          >
-            {reaction === 'BAD' ? <IoThumbsDown size={18} /> : <IoThumbsDownOutline size={18} />}
-          </button>
-        </div>
-      )}
+      <div
+        className={`outfit-chat__card-image-wrap${isReactable ? ' outfit-chat__card-image-wrap--clickable' : ''}`}
+        onClick={isReactable ? onImageClick : undefined}
+      >
+        {outfit.vtonImageUrl ? (
+          <img
+            src={outfit.vtonImageUrl}
+            alt={`코디 ${index + 1}`}
+            className="outfit-chat__card-image"
+          />
+        ) : (
+          <div className="outfit-chat__card-image-placeholder">이미지 준비 중</div>
+        )}
+        {reaction && reaction !== 'NONE' && (
+          <span className="outfit-chat__card-reaction-badge">
+            {reaction === 'GOOD' ? '👍' : '👎'}
+          </span>
+        )}
+        {isReactable && (
+          <span className="outfit-chat__card-tap-hint">탭하여 평가</span>
+        )}
+      </div>
+      <div className="outfit-chat__card-info">
+        <span className="outfit-chat__card-label">코디 {index + 1}/{total}</span>
+        {outfit.clothesIds && outfit.clothesIds.length > 0 && (
+          <span className="outfit-chat__card-clothes-count">옷 {outfit.clothesIds.length}개</span>
+        )}
+      </div>
     </div>
   );
 };
@@ -169,9 +146,27 @@ const OutfitChatPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reactions, setReactions] = useState({}); // { [resultId]: 'GOOD' | 'BAD' | 'NONE' }
 
+  // 리뷰 모달 상태
+  const [reviewModal, setReviewModal] = useState({
+    open: false,
+    outfits: [],
+    index: 0,
+  });
+
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const hasInitialQuery = useRef(!!initialQuery);
+
+  // 가장 최근 완료된 AI 메시지의 인덱스 (리액션 가능 대상)
+  // turnNo 대신 배열 인덱스 기반으로 판단 — WebSocket 이벤트에 turnNo가 없어도 동작
+  const latestReactableMsgIdx = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].type === 'ai' && messages[i].outfits?.length > 0) {
+        return i;
+      }
+    }
+    return -1;
+  }, [messages]);
 
   // 하단 자동 스크롤
   const scrollToBottom = useCallback(() => {
@@ -180,6 +175,26 @@ const OutfitChatPage = () => {
         messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
       }
     }, 100);
+  }, []);
+
+  // 리뷰 모달 열기/닫기/네비게이션
+  const openReviewModal = useCallback((outfits, startIndex) => {
+    setReviewModal({ open: true, outfits, index: startIndex });
+  }, []);
+
+  const closeReviewModal = useCallback(() => {
+    setReviewModal({ open: false, outfits: [], index: 0 });
+  }, []);
+
+  const reviewPrev = useCallback(() => {
+    setReviewModal((prev) => ({ ...prev, index: Math.max(0, prev.index - 1) }));
+  }, []);
+
+  const reviewNext = useCallback(() => {
+    setReviewModal((prev) => ({
+      ...prev,
+      index: Math.min(prev.outfits.length - 1, prev.index + 1),
+    }));
   }, []);
 
   // 세션 상세 로드
@@ -193,9 +208,10 @@ const OutfitChatPage = () => {
 
         const turns = data?.turns || [];
         // turns가 역순(최신 먼저)이면 뒤집기
-        const orderedTurns = turns[0]?.turnNo > turns[turns.length - 1]?.turnNo
-          ? [...turns].reverse()
-          : turns;
+        const orderedTurns =
+          turns.length > 1 && turns[0]?.turnNo > turns[turns.length - 1]?.turnNo
+            ? [...turns].reverse()
+            : turns;
         const converted = turnsToMessages(orderedTurns);
         setMessages(converted);
 
@@ -204,27 +220,29 @@ const OutfitChatPage = () => {
         orderedTurns.forEach((turn) => {
           if (turn.outfits) {
             turn.outfits.forEach((outfit) => {
-              const id = outfit.outfitId || outfit.feedbackId;
-              if (id && outfit.reaction && outfit.reaction !== 'NONE') {
-                existingReactions[id] = outfit.reaction;
+              if (outfit.resultId && outfit.reaction && outfit.reaction !== 'NONE') {
+                existingReactions[outfit.resultId] = outfit.reaction;
               }
             });
           }
         });
         setReactions(existingReactions);
       } catch (err) {
-        // 세션을 찾을 수 없는 경우 (새 세션 생성 직후 아직 데이터 없음)
+        // 새 세션 생성 직후 아직 데이터 없는 경우
         if (hasInitialQuery.current && initialQuery) {
-          setMessages([{
-            type: 'user',
-            content: initialQuery,
-            createdAt: new Date().toISOString(),
-            turnNo: 1,
-          }, {
-            type: 'ai-loading',
-            stepLabel: '코디를 찾고 있어요...',
-            turnNo: 1,
-          }]);
+          setMessages([
+            {
+              type: 'user',
+              content: initialQuery,
+              createdAt: new Date().toISOString(),
+              turnNo: 1,
+            },
+            {
+              type: 'ai-loading',
+              stepLabel: '코디를 찾고 있어요...',
+              turnNo: 1,
+            },
+          ]);
           setSessionTitle(initialQuery);
         } else {
           console.error('세션 상세 조회 실패:', err);
@@ -236,7 +254,7 @@ const OutfitChatPage = () => {
     };
 
     loadSession();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   // 로드 완료 후 하단 스크롤
@@ -261,8 +279,7 @@ const OutfitChatPage = () => {
       const { status, stepLabel } = event;
 
       if (status === 'PROCESSING' || status === 'processing') {
-        // 로딩 인디케이터 stepLabel 업데이트
-        setMessages(prev => {
+        setMessages((prev) => {
           const lastIdx = prev.length - 1;
           if (lastIdx >= 0 && prev[lastIdx].type === 'ai-loading') {
             const updated = [...prev];
@@ -272,9 +289,8 @@ const OutfitChatPage = () => {
           return prev;
         });
       } else if (status === 'SUCCESS' || status === 'success' || status === 'COMPLETED') {
-        // AI 응답 도착 → 로딩 메시지를 실제 AI 메시지로 교체
-        setMessages(prev => {
-          const updated = prev.filter(m => m.type !== 'ai-loading');
+        setMessages((prev) => {
+          const updated = prev.filter((m) => m.type !== 'ai-loading');
           updated.push({
             type: 'ai',
             content: event.querySummary || event.aiMessage || '',
@@ -287,9 +303,8 @@ const OutfitChatPage = () => {
         setIsSubmitting(false);
         scrollToBottom();
       } else if (status === 'CLARIFICATION_NEEDED' || status === 'clarification_needed') {
-        // AI 재질문
-        setMessages(prev => {
-          const updated = prev.filter(m => m.type !== 'ai-loading');
+        setMessages((prev) => {
+          const updated = prev.filter((m) => m.type !== 'ai-loading');
           updated.push({
             type: 'ai',
             content: event.aiMessage || '질문을 좀 더 구체적으로 해주세요.',
@@ -303,9 +318,8 @@ const OutfitChatPage = () => {
         setIsSubmitting(false);
         scrollToBottom();
       } else if (status === 'FAILED' || status === 'failed') {
-        // 에러
-        setMessages(prev => {
-          const updated = prev.filter(m => m.type !== 'ai-loading');
+        setMessages((prev) => {
+          const updated = prev.filter((m) => m.type !== 'ai-loading');
           updated.push({
             type: 'ai',
             content: event.message || '코디 추천에 실패했어요. 다시 시도해주세요.',
@@ -344,7 +358,7 @@ const OutfitChatPage = () => {
     setInputText('');
 
     // 사용자 메시지 즉시 추가
-    setMessages(prev => [
+    setMessages((prev) => [
       ...prev,
       {
         type: 'user',
@@ -360,11 +374,9 @@ const OutfitChatPage = () => {
 
     try {
       await createOutfitRequestV2(text, sessionId);
-      // WebSocket으로 결과 수신 대기 (isSubmitting 유지)
     } catch (err) {
-      // 요청 자체 실패
-      setMessages(prev => {
-        const updated = prev.filter(m => m.type !== 'ai-loading');
+      setMessages((prev) => {
+        const updated = prev.filter((m) => m.type !== 'ai-loading');
         updated.push({
           type: 'ai',
           content: err.message || '코디 요청에 실패했어요. 다시 시도해주세요.',
@@ -380,19 +392,22 @@ const OutfitChatPage = () => {
   }, [inputText, isSubmitting, sessionId, showError, scrollToBottom]);
 
   // 리액션 처리
-  const handleReaction = useCallback(async (resultId, type) => {
-    const currentReaction = reactions[resultId] || 'NONE';
-    const newReaction = currentReaction === type ? 'NONE' : type;
+  const handleReaction = useCallback(
+    async (resultId, type) => {
+      const currentReaction = reactions[resultId] || 'NONE';
+      const newReaction = currentReaction === type ? 'NONE' : type;
 
-    setReactions(prev => ({ ...prev, [resultId]: newReaction }));
+      setReactions((prev) => ({ ...prev, [resultId]: newReaction }));
 
-    try {
-      await updateOutfitReactionV2(resultId, newReaction);
-    } catch (err) {
-      // 실패 시 롤백
-      setReactions(prev => ({ ...prev, [resultId]: currentReaction }));
-    }
-  }, [reactions]);
+      try {
+        await updateOutfitReactionV2(resultId, newReaction);
+      } catch (err) {
+        // 실패 시 롤백
+        setReactions((prev) => ({ ...prev, [resultId]: currentReaction }));
+      }
+    },
+    [reactions]
+  );
 
   // 뒤로가기
   const handleBack = () => {
@@ -400,16 +415,18 @@ const OutfitChatPage = () => {
   };
 
   // 로딩 중 AI 처리 여부 (입력 비활성화 판단)
-  const hasLoadingMessage = messages.some(m => m.type === 'ai-loading');
+  const hasLoadingMessage = messages.some((m) => m.type === 'ai-loading');
+
+  // 리뷰 모달에서 현재 보고 있는 outfit
+  const currentReviewOutfit = reviewModal.open ? reviewModal.outfits[reviewModal.index] : null;
+  const currentReviewReaction = currentReviewOutfit
+    ? reactions[currentReviewOutfit.resultId] || 'NONE'
+    : 'NONE';
 
   return (
     <div className="outfit-chat">
       {/* 헤더 */}
-      <Header
-        title={sessionTitle}
-        showBack
-        onBack={handleBack}
-      />
+      <Header title={sessionTitle} showBack onBack={handleBack} />
 
       {/* 대화 영역 */}
       <div className="outfit-chat__messages-wrapper">
@@ -452,6 +469,8 @@ const OutfitChatPage = () => {
                 }
 
                 if (msg.type === 'ai') {
+                  const isLatestTurn = idx === latestReactableMsgIdx;
+
                   return (
                     <div key={idx} className="outfit-chat__bubble-wrap outfit-chat__bubble-wrap--ai">
                       <div className="outfit-chat__bubble outfit-chat__bubble--ai">
@@ -464,10 +483,13 @@ const OutfitChatPage = () => {
                         <div className="outfit-chat__cards-scroll">
                           {msg.outfits.map((outfit, oIdx) => (
                             <OutfitCard
-                              key={outfit.outfitId || outfit.feedbackId || oIdx}
+                              key={outfit.resultId || oIdx}
                               outfit={outfit}
-                              reaction={reactions[outfit.outfitId || outfit.feedbackId] || 'NONE'}
-                              onReaction={handleReaction}
+                              index={oIdx}
+                              total={msg.outfits.length}
+                              reaction={reactions[outfit.resultId] || 'NONE'}
+                              isReactable={isLatestTurn}
+                              onImageClick={() => openReviewModal(msg.outfits, oIdx)}
                             />
                           ))}
                         </div>
@@ -515,6 +537,82 @@ const OutfitChatPage = () => {
           <IoArrowUp size={20} />
         </button>
       </div>
+
+      {/* 리뷰 모달 — 코디 결과 이미지 캐러셀 + 리액션 */}
+      {reviewModal.open && currentReviewOutfit && (
+        <div className="outfit-review__overlay" onClick={closeReviewModal}>
+          <div className="outfit-review__modal" onClick={(e) => e.stopPropagation()}>
+            <button className="outfit-review__close" onClick={closeReviewModal} aria-label="닫기">
+              <IoClose size={24} />
+            </button>
+
+            <div className="outfit-review__image-area">
+              {reviewModal.index > 0 && (
+                <button
+                  className="outfit-review__nav outfit-review__nav--prev"
+                  onClick={reviewPrev}
+                  aria-label="이전 코디"
+                >
+                  <IoChevronBack size={24} />
+                </button>
+              )}
+
+              <img
+                src={currentReviewOutfit.vtonImageUrl}
+                alt={`코디 ${reviewModal.index + 1}`}
+                className="outfit-review__image"
+              />
+
+              {reviewModal.index < reviewModal.outfits.length - 1 && (
+                <button
+                  className="outfit-review__nav outfit-review__nav--next"
+                  onClick={reviewNext}
+                  aria-label="다음 코디"
+                >
+                  <IoChevronForward size={24} />
+                </button>
+              )}
+            </div>
+
+            {/* 위치 인디케이터 */}
+            <div className="outfit-review__indicator">
+              {reviewModal.outfits.map((_, i) => (
+                <span
+                  key={i}
+                  className={`outfit-review__dot${i === reviewModal.index ? ' outfit-review__dot--active' : ''}`}
+                  onClick={() => setReviewModal((prev) => ({ ...prev, index: i }))}
+                />
+              ))}
+            </div>
+
+            {/* 리액션 버튼 */}
+            <div className="outfit-review__actions">
+              <button
+                className={`outfit-review__reaction-btn${currentReviewReaction === 'GOOD' ? ' outfit-review__reaction-btn--good-active' : ''}`}
+                onClick={() => handleReaction(currentReviewOutfit.resultId, 'GOOD')}
+              >
+                {currentReviewReaction === 'GOOD' ? (
+                  <IoThumbsUp size={28} />
+                ) : (
+                  <IoThumbsUpOutline size={28} />
+                )}
+                <span>좋아요</span>
+              </button>
+              <button
+                className={`outfit-review__reaction-btn${currentReviewReaction === 'BAD' ? ' outfit-review__reaction-btn--bad-active' : ''}`}
+                onClick={() => handleReaction(currentReviewOutfit.resultId, 'BAD')}
+              >
+                {currentReviewReaction === 'BAD' ? (
+                  <IoThumbsDown size={28} />
+                ) : (
+                  <IoThumbsDownOutline size={28} />
+                )}
+                <span>별로예요</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

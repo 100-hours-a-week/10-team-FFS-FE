@@ -66,6 +66,13 @@
   margin-bottom: var(--spacing-sm);
 }
 
+.ai-coord-page__search-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
 .ai-coord-page__search-input-wrapper {
   display: flex;
   align-items: center;
