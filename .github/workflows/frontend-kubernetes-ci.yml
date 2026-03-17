@@ -1,0 +1,84 @@
+name: Frontend S3 CI (V3)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [dev, main]
+  
+  push:
+    branches: [dev, main]
+
+jobs:
+  ci:
+    name: CI - Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        id: install
+        run: npm ci
+
+      - name: Build project
+        id: build
+        env:
+          REACT_APP_BASE_URL_DEV: ${{ secrets.V3_REACT_APP_BASE_URL }}
+          REACT_APP_CHAT_BASE_URL_DEV: ${{ secrets.V3_REACT_APP_CHAT_BASE_URL }}
+          REACT_APP_KAKAO_REDIRECT_URI_DEV: ${{ secrets.V3_REACT_APP_KAKAO_REDIRECT_URI }}
+          REACT_APP_BASE_URL_PROD: ${{ secrets.V3_REACT_APP_BASE_URL }}
+          REACT_APP_CHAT_BASE_URL_PROD: ${{ secrets.V3_REACT_APP_CHAT_BASE_URL }}
+          REACT_APP_KAKAO_REDIRECT_URI_PROD: ${{ secrets.V3_REACT_APP_KAKAO_REDIRECT_URI }}
+          REACT_APP_KAKAO_CLIENT_ID: ${{ secrets.REACT_APP_KAKAO_CLIENT_ID }}
+        run: CI=false npm run build
+
+      - name: Run tests
+        id: tests
+        run: npm test -- --watch=false --passWithNoTests
+
+      # push 시에만 artifact 저장 (CD에서 사용)
+      - name: Upload build artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-v3
+          path: build
+          retention-days: 7
+
+      - name: Notify Discord - Success
+        if: success()
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: "Frontend S3 CI Bot (V3)"
+          embed-title: "✅ Frontend CI 성공 (Production S3 V3)"
+          embed-description: |
+            **이벤트:** ${{ github.event_name }}
+            **브랜치:** `${{ github.ref_name }}`
+            **실행자:** ${{ github.actor }}
+            • Install: ${{ steps.install.outcome }}
+            • Build: ${{ steps.build.outcome }}
+            • Tests: ${{ steps.tests.outcome }}
+
+      - name: Notify Discord - Failure
+        if: failure()
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: "Frontend S3 CI Bot (V3)"
+          avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+          embed-title: "❌ Frontend CI 실패 (Production S3 V3)"
+          embed-description: |
+            **이벤트:** ${{ github.event_name }}
+            **브랜치:** `${{ github.ref_name }}
+            **실행자:** ${{ github.actor }}
+            • Install: ${{ steps.install.outcome }}
+            • Build: ${{ steps.build.outcome }}
+            • Tests: ${{ steps.tests.outcome }}
