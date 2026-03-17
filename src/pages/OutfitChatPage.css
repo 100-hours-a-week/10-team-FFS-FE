@@ -1,0 +1,526 @@
+/* OutfitChatPage — 채팅형 코디 추천 */
+
+.outfit-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background-color: var(--color-bg-primary);
+  max-width: var(--max-width-app);
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* 메시지 래퍼 */
+.outfit-chat__messages-wrapper {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.outfit-chat__messages {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.outfit-chat__center-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* 말풍선 래퍼 */
+.outfit-chat__bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  gap: 4px;
+}
+
+.outfit-chat__bubble-wrap--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.outfit-chat__bubble-wrap--ai {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+/* 말풍선 */
+.outfit-chat__bubble {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.outfit-chat__bubble--user {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.outfit-chat__bubble--ai {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.outfit-chat__bubble-text {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.outfit-chat__bubble-time {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+/* 로딩 인디케이터 */
+.outfit-chat__loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.outfit-chat__loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.outfit-chat__loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-text-tertiary);
+  animation: outfit-chat-dot-bounce 1.2s infinite;
+}
+
+.outfit-chat__loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.outfit-chat__loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes outfit-chat-dot-bounce {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.outfit-chat__loading-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* 코디 카드 가로 스크롤 */
+.outfit-chat__cards-scroll {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  padding: var(--spacing-sm) 0;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.outfit-chat__cards-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 코디 카드 */
+.outfit-chat__card {
+  flex-shrink: 0;
+  width: 200px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-primary);
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
+.outfit-chat__card-image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3/4;
+  background-color: var(--color-bg-tertiary);
+  overflow: hidden;
+}
+
+.outfit-chat__card-image-wrap--clickable {
+  cursor: pointer;
+}
+
+.outfit-chat__card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.outfit-chat__card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* 카드 리액션 뱃지 */
+.outfit-chat__card-reaction-badge {
+  position: absolute;
+  top: var(--spacing-xs);
+  right: var(--spacing-xs);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  font-size: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* 카드 탭 힌트 */
+.outfit-chat__card-tap-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px 0;
+  text-align: center;
+  font-size: 11px;
+  color: white;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.5));
+}
+
+/* 카드 하단 정보 */
+.outfit-chat__card-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.outfit-chat__card-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.outfit-chat__card-clothes-count {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+/* 하단 입력창 */
+.outfit-chat__input-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-primary);
+}
+
+.outfit-chat__text-input {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  outline: none;
+  background-color: var(--color-bg-secondary);
+}
+
+.outfit-chat__text-input:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-primary);
+}
+
+.outfit-chat__text-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.outfit-chat__send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.outfit-chat__send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ====================================
+   리뷰 모달 — 코디 이미지 캐러셀 + 리액션
+   ==================================== */
+
+.outfit-review__overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.88);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: outfit-review-fade-in 0.2s ease-out;
+}
+
+@keyframes outfit-review-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.outfit-review__modal {
+  position: relative;
+  width: 100%;
+  max-width: var(--max-width-app);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  gap: var(--spacing-lg);
+}
+
+.outfit-review__close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  z-index: 1;
+  transition: background-color var(--transition-fast);
+}
+
+.outfit-review__close:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 이미지 영역 */
+.outfit-review__image-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-height: 55vh;
+}
+
+.outfit-review__image {
+  max-width: 85%;
+  max-height: 55vh;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+}
+
+/* 좌우 네비게이션 버튼 */
+.outfit-review__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.outfit-review__nav:active {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.outfit-review__nav--prev {
+  left: 0;
+}
+
+.outfit-review__nav--next {
+  right: 0;
+}
+
+/* 인디케이터 점 */
+.outfit-review__indicator {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.outfit-review__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.outfit-review__dot--active {
+  background-color: white;
+  transform: scale(1.25);
+}
+
+/* 착용 아이템 정보 */
+.outfit-review__clothes {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.outfit-review__clothes-title {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.outfit-review__clothes-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.outfit-review__clothes-list {
+  display: flex;
+  gap: var(--spacing-sm);
+  overflow-x: auto;
+  padding: var(--spacing-xs) 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.outfit-review__clothes-list::-webkit-scrollbar {
+  display: none;
+}
+
+.outfit-review__clothes-item {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  width: 64px;
+}
+
+.outfit-review__clothes-item:active {
+  opacity: 0.7;
+}
+
+.outfit-review__clothes-image {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.outfit-review__clothes-name {
+  font-size: 10px;
+  color: white;
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outfit-review__clothes-category {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outfit-review__clothes-empty {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: var(--spacing-xs) 0;
+}
+
+/* 리액션 버튼 */
+.outfit-review__actions {
+  display: flex;
+  gap: 48px;
+}
+
+.outfit-review__reaction-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: none;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  min-width: 80px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  transition: all var(--transition-fast);
+}
+
+.outfit-review__reaction-btn:active {
+  transform: scale(0.95);
+}
+
+.outfit-review__reaction-btn--good-active {
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.outfit-review__reaction-btn--bad-active {
+  border-color: #f44336;
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}

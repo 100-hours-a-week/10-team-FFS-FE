@@ -528,6 +528,80 @@ export const updateOutfitReaction = async (resultId, reaction) => {
 };
 
 /* ==============================================
+   AI 코디 추천 관련 API (v2 — 멀티턴/세션)
+   ============================================== */
+
+/**
+ * 코디 추천 요청 (v2 멀티턴)
+ * POST /api/v2/outfits?sessionId={sessionId}
+ * @param {string} content - 코디 요청 텍스트 (2~100자)
+ * @param {number|null} sessionId - 기존 세션 ID (새 세션이면 null)
+ * @returns {Promise<{code: number, message: string, data: {requestId: number, sessionId: number, turnNo: number, status: string}}>}
+ */
+export const createOutfitRequestV2 = async (content, sessionId = null) => {
+  const params = sessionId ? `?sessionId=${sessionId}` : '';
+  return apiRequest(`/outfits${params}`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  }, BASE_URL_V2);
+};
+
+/**
+ * 코디 세션 목록 조회
+ * GET /api/v2/outfits/sessions?page=0&size=10
+ * @param {number} page - 페이지 번호 (0부터)
+ * @param {number} size - 페이지 크기
+ * @returns {Promise<{code: number, message: string, data: {content: Array, totalPages: number, totalElements: number, last: boolean}}>}
+ */
+export const getOutfitSessions = async (page = 0, size = 10) => {
+  return apiRequest(`/outfits/sessions?page=${page}&size=${size}`, {}, BASE_URL_V2);
+};
+
+/**
+ * 코디 세션 상세 조회 (턴 목록)
+ * GET /api/v2/outfits/sessions/{sessionId}?page=0&size=20
+ * @param {number} sessionId
+ * @param {number} page
+ * @param {number} size
+ * @returns {Promise<{code: number, message: string, data: {sessionId: number, title: string, turns: Array, totalPages: number, last: boolean}}>}
+ */
+export const getOutfitSessionDetail = async (sessionId, page = 0, size = 20) => {
+  return apiRequest(`/outfits/sessions/${sessionId}?page=${page}&size=${size}`, {}, BASE_URL_V2);
+};
+
+/**
+ * 코디 피드백 등록 (v2)
+ * PATCH /api/v2/outfits/feedbacks/{resultId}
+ * @param {number} resultId
+ * @param {string} reaction - 'GOOD' | 'BAD' | 'NONE'
+ */
+export const updateOutfitReactionV2 = async (resultId, reaction) => {
+  return apiRequest(`/outfits/feedbacks/${resultId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ reaction }),
+  }, BASE_URL_V2);
+};
+
+/**
+ * 코디 요청 상태 복구 조회
+ * GET /api/v2/outfits/requests/{requestId}
+ * @param {number} requestId
+ */
+export const getOutfitRequestStatus = async (requestId) => {
+  return apiRequest(`/outfits/requests/${requestId}`, {}, BASE_URL_V2);
+};
+
+/**
+ * 코디 결과 옷 상세 조회
+ * GET /api/v2/outfits/results/clothes?resultIds=1,2,3
+ * @param {number[]} resultIds - 코디 결과 ID 배열
+ * @returns {Promise<{code: number, message: string, data: {results: Array<{resultId: number, clothes: Array}>}}>}
+ */
+export const getOutfitResultClothes = async (resultIds) => {
+  return apiRequest(`/outfits/results/clothes?resultIds=${resultIds.join(',')}`, {}, BASE_URL_V2);
+};
+
+/* ==============================================
    AI 쇼핑 코디 추천 관련 API (v2)
    ============================================== */
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ChatProvider } from './contexts/ChatContext';
@@ -24,6 +24,7 @@ import {
   DmListPage,
   DmChatPage,
   AIShopPage,
+  OutfitChatPage,
 } from './pages';
 import { FullPageLoading } from './components/common';
 import './styles/global.css';
@@ -158,6 +159,17 @@ function AppRoutes() {
         <Route path="/dm/:roomId" element={<DmChatPage />} />
 
         <Route path="/test" element={<ClosetUploadPage />} />
+      </Route>
+
+      {/* 보호 라우트 — BottomNav 없음 */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <Outlet />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/ai-coordi/:sessionId" element={<OutfitChatPage />} />
       </Route>
 
       {/* 404 - 존재하지 않는 경로 */}
