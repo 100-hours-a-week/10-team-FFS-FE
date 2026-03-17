@@ -363,3 +363,11 @@
 .ai-shop-page__action-btn:hover {
   background-color: var(--color-bg-tertiary);
 }
+
+.ai-coord-page__outfit-image {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;
+  padding: 0 20px;
+}

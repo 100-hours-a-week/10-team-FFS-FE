@@ -69,6 +69,17 @@ const WaitForAuth = ({ children }) => {
   return children;
 };
 
+// 루트 경로: 인증 여부에 따라 피드 또는 로그인으로 이동
+const RootRedirect = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <FullPageLoading />;
+  }
+
+  return <Navigate to="/feed" replace />;
+};
+
 function AppRoutes() {
   return (
     <Routes>
@@ -100,8 +111,8 @@ function AppRoutes() {
           </WaitForAuth>
         }
       >
-        {/* 기본 경로 → 피드 홈 */}
-        <Route index element={<Navigate to="/feed" replace />} />
+        {/* 기본 경로 → 인증 여부에 따라 분기 */}
+        <Route index element={<RootRedirect />} />
 
         {/* 피드 (읽기) */}
         <Route path="/feed" element={<FeedListPage />} />
@@ -109,6 +120,12 @@ function AppRoutes() {
 
         {/* 프로필 (읽기) */}
         <Route path="/profile/:userId" element={<ProfilePage />} />
+
+        {/* 타인 옷장 / 옷 상세 (비회원도 접근 가능) */}
+        <Route path="/closet/:userId" element={<ClosetListPage />} />
+        <Route path="/clothes/:clothesId" element={<ClosetDetailPage />} />
+        <Route path="/profile/:userId/closet" element={<OtherClosetListPage />} />
+        <Route path="/profile/:userId/closet/:clothesId" element={<OtherClosetDetailPage />} />
       </Route>
 
       {/* 보호된 라우트 - 로그인 필수 */}
@@ -119,10 +136,8 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        {/* 옷장 */}
-        <Route path="/closet/:userId" element={<ClosetListPage />} />
+        {/* 옷장 (로그인 필요) */}
         <Route path="/closet/upload" element={<ClothesUploadPage />} />
-        <Route path="/clothes/:clothesId" element={<ClosetDetailPage />} />
         <Route path="/clothes/:clothesId/edit" element={<ClothesEditPage />} />
 
         {/* AI 코디 */}
@@ -134,10 +149,6 @@ function AppRoutes() {
         {/* 피드 (쓰기) */}
         <Route path="/feed/create" element={<FeedCreatePage />} />
         <Route path="/feed/:feedId/edit" element={<FeedCreatePage />} />
-
-        {/* 타인 옷장 */}
-        <Route path="/profile/:userId/closet" element={<OtherClosetListPage />} />
-        <Route path="/profile/:userId/closet/:clothesId" element={<OtherClosetDetailPage />} />
 
         {/* 프로필 편집 */}
         <Route path="/mypage/edit" element={<MyPageEdit />} />

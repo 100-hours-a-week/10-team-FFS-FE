@@ -4,49 +4,56 @@
    ============================================== */
 
 :root {
-  /* Primary Colors - 메인 브랜드 색상 */
-  --color-primary: #1a1a1a;
-  --color-primary-light: #333333;
-  --color-primary-dark: #000000;
-  
-  /* Secondary Colors - 보조 색상 */
-  --color-secondary: #666666;
-  --color-secondary-light: #888888;
-  --color-secondary-dark: #444444;
-  
-  /* Accent Colors - 강조 색상 (버튼, 링크 등) */
-  --color-accent: #1a1a1a;
-  --color-accent-hover: #333333;
-  --color-accent-active: #000000;
-  
+  /* Primary Colors - 로고 기반 퍼플-블루 */
+  --color-primary: #7B5EF8;
+  --color-primary-light: #9479FA;
+  --color-primary-dark: #5C3ED4;
+
+  /* Gradient - 로고의 블루→퍼플 그라디언트 */
+  --gradient-primary: linear-gradient(135deg, #5B6CF8 0%, #7B5EF8 50%, #A040F5 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #6B7CFF 0%, #8B6EFF 50%, #B050FF 100%);
+
+  /* Secondary Colors */
+  --color-secondary: #64748B;
+  --color-secondary-light: #94A3B8;
+  --color-secondary-dark: #475569;
+
+  /* Accent Colors */
+  --color-accent: #5B6CF8;
+  --color-accent-hover: #6B7CFF;
+  --color-accent-active: #4A5BE8;
+
   /* Background Colors */
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f5f5f5;
-  --color-bg-tertiary: #eeeeee;
-  --color-bg-overlay: rgba(0, 0, 0, 0.5);
-  --color-bg-modal: rgba(0, 0, 0, 0.4);
-  
+  --color-bg-secondary: #F8F7FF;
+  --color-bg-tertiary: #EEEEFF;
+  --color-bg-overlay: rgba(10, 8, 30, 0.6);
+  --color-bg-modal: rgba(10, 8, 30, 0.5);
+
+  /* Web desktop background (양옆 배경) */
+  --color-bg-web: #0A0818;
+
   /* Text Colors */
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #666666;
-  --color-text-tertiary: #999999;
-  --color-text-placeholder: #aaaaaa;
+  --color-text-primary: #1A1630;
+  --color-text-secondary: #64748B;
+  --color-text-tertiary: #94A3B8;
+  --color-text-placeholder: #B0B8CC;
   --color-text-inverse: #ffffff;
-  
+
   /* Border Colors */
-  --color-border: #e0e0e0;
-  --color-border-light: #f0f0f0;
-  --color-border-dark: #cccccc;
-  
+  --color-border: #E2E0F0;
+  --color-border-light: #EEEEFF;
+  --color-border-dark: #C8C4E0;
+
   /* Status Colors */
-  --color-success: #4caf50;
-  --color-error: #f44336;
-  --color-warning: #ff9800;
-  --color-info: #2196f3;
-  
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+  --color-info: #3B82F6;
+
   /* Interactive States */
-  --color-like: #ff4757;
-  --color-like-active: #ff6b7a;
+  --color-like: #F43F5E;
+  --color-like-active: #FB7185;
   
   /* Shadow */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);

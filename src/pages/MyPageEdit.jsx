@@ -26,7 +26,7 @@ const MyPageEdit = () => {
     try {
       await logout();
       success('로그아웃 되었습니다.');
-      navigate('/login');
+      navigate('/feed');
     } catch (err) {
       showError('로그아웃에 실패했습니다.');
     }
@@ -37,7 +37,7 @@ const MyPageEdit = () => {
     try {
       await deleteAccount();
       success('회원탈퇴가 완료되었습니다.');
-      navigate('/login');
+      navigate('/feed');
     } catch (err) {
       console.error('회원탈퇴 실패:', err);
       showError('회원탈퇴에 실패했습니다.');

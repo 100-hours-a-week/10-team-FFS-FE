@@ -272,10 +272,6 @@ const ProfilePage = () => {
 
   // 옷장으로 이동
   const handleClosetClick = () => {
-    if (!isAuthenticated) {
-      requireLogin('옷장을 보려면 로그인이 필요합니다.');
-      return;
-    }
     navigate(`/closet/${userId}`);
   };
 
