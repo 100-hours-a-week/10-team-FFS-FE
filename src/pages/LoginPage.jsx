@@ -6,7 +6,7 @@ import './LoginPage.css';
 
 // 카카오 로그인 설정
 const KAKAO_CLIENT_ID = process.env.REACT_APP_KAKAO_CLIENT_ID;
-const KAKAO_REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI_PROD || 'http://localhost:3000/oauth/kakao/callback';
+const KAKAO_REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI || 'http://localhost:3000/oauth/kakao/callback';
 
 const LoginPage = () => {
   const navigate = useNavigate();
