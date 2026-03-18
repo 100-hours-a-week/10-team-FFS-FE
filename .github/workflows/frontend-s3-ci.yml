@@ -75,7 +75,7 @@ jobs:
           embed-title: "✅ Frontend CI 성공 (${{ env.ENV_LABEL }} S3 V2)"
           embed-description: |
             **이벤트:** ${{ github.event_name }}
-            **브랜치:** `${{ github.ref_name }}`
+            **브랜치:** `${{ github.ref_name }}
             **실행자:** ${{ github.actor }}
 
             • Install: ${{ steps.install.outcome }}
@@ -91,7 +91,7 @@ jobs:
           embed-title: "❌ Frontend CI 실패 (${{ env.ENV_LABEL }} S3 V2)"
           embed-description: |
             **이벤트:** ${{ github.event_name }}
-            **브랜치:** `${{ github.ref_name }}`
+            **브랜치:** `${{ github.ref_name }}
             **실행자:** ${{ github.actor }}
 
             • Install: ${{ steps.install.outcome }}
