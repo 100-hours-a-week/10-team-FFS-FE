@@ -1,4 +1,4 @@
-/* V1 MyPage Edit Styles - 계정 관리 (로그아웃/회원탈퇴) */
+/* V1 MyPage Edit Styles - 계정 관리 */
 
 .mypage-edit {
   display: flex;
@@ -10,6 +10,126 @@
 .mypage-edit__content {
   flex: 1;
   padding: var(--spacing-lg);
+}
+
+/* 프로필 이미지 섹션 */
+.mypage-edit__profile-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xl) 0 var(--spacing-lg);
+}
+
+.mypage-edit__avatar-wrapper {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mypage-edit__avatar-img {
+  background-color: var(--color-bg-secondary);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.mypage-edit__avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--color-primary, #7B5EF8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  border: 2px solid var(--color-bg-primary);
+}
+
+.mypage-edit__delete-image-btn {
+  margin-top: var(--spacing-sm);
+  background: none;
+  border: none;
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* 닉네임 섹션 */
+.mypage-edit__nickname-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.mypage-edit__label {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.mypage-edit__nickname-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px var(--spacing-sm);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.mypage-edit__nickname-input:focus {
+  border-color: var(--color-primary, #7B5EF8);
+}
+
+.mypage-edit__nickname-status {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.mypage-edit__nickname-status--error {
+  color: var(--color-error);
+}
+
+.mypage-edit__nickname-status--success {
+  color: #4caf50;
+}
+
+/* 완료 버튼 */
+.mypage-edit__complete-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: var(--spacing-lg);
+  background: linear-gradient(135deg, #5B6CF8 0%, #7B5EF8 50%, #A040F5 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.mypage-edit__complete-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 구분선 */
+.mypage-edit__divider {
+  height: 1px;
+  background-color: var(--color-border-light);
+  margin-bottom: var(--spacing-sm);
 }
 
 /* 계정 관리 버튼 */
@@ -29,6 +149,8 @@
   text-align: left;
   cursor: pointer;
   transition: background-color var(--transition-fast);
+  text-decoration: none;
+  display: block;
 }
 
 .mypage-edit__account-btn:hover {

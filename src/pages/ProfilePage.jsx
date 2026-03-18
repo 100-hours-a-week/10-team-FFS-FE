@@ -8,6 +8,7 @@ import { getUserProfile, getUserFeeds, followUser, unfollowUser, getFollowings, 
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import FeedList from './FeedList';
 import './ProfilePage.css';
+import defaultProfile from '../assets/defalt.png';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -288,6 +289,8 @@ const ProfilePage = () => {
 
   if (!profile) return null;
 
+  const displayImage = profile?.userProfileImageUrl || defaultProfile;
+
   return (
     <div className="my-page">
       <Header
@@ -301,11 +304,7 @@ const ProfilePage = () => {
         {/* 프로필 정보 */}
         <div className="my-page__profile">
           <div className="my-page__avatar">
-            {profile.profileImage ? (
-              <img src={profile.profileImage} alt={profile.nickname} />
-            ) : (
-              <div className="my-page__avatar-placeholder" />
-            )}
+            <img src={displayImage} alt={profile.nickname} className="my-page__avatar-placeholder" />
           </div>
 
           <div className="my-page__info">

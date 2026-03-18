@@ -5,6 +5,7 @@
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:8080/api/v1';
 const BASE_URL_V2 = BASE_URL.replace('/v1', '/v2');
+const BASE_URL_V3 = BASE_URL.replace('/v1', '/v3');
 const BASE_URL_CHAT_V2 = (process.env.REACT_APP_CHAT_BASE_URL || 'http://localhost:8081/api/v1').replace('/v1', '/v2');
 
 // 토큰 관리
@@ -926,6 +927,40 @@ export const updateMyProfile = async (profileData) => {
     method: 'PUT',
     body: formData,
   });
+};
+
+/**
+ * 닉네임 수정
+ * PATCH /api/v3/users/me/nickname
+ * @param {string} nickname - 새 닉네임
+ */
+export const updateNickname = async (nickname) => {
+  return apiRequest('/users/me/nickname', {
+    method: 'PATCH',
+    body: JSON.stringify({ nickname }),
+  }, BASE_URL_V3);
+};
+
+/**
+ * 프로필 이미지 수정
+ * PATCH /api/v3/users/me/profile-image
+ * @param {number} profileImageFileId - presigned URL 업로드 후 받은 fileId
+ */
+export const updateProfileImage = async (profileImageFileId) => {
+  return apiRequest('/users/me/profile-image', {
+    method: 'PATCH',
+    body: JSON.stringify({ profileImageFileId }),
+  }, BASE_URL_V3);
+};
+
+/**
+ * 프로필 이미지 삭제
+ * DELETE /api/v3/users/me/profile-image
+ */
+export const deleteProfileImage = async () => {
+  return apiRequest('/users/me/profile-image', {
+    method: 'DELETE',
+  }, BASE_URL_V3);
 };
 
 /* ==============================================
