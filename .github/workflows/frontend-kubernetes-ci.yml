@@ -30,12 +30,9 @@ jobs:
       - name: Build project
         id: build
         env:
-          REACT_APP_BASE_URL_DEV: ${{ secrets.V3_REACT_APP_BASE_URL }}
-          REACT_APP_CHAT_BASE_URL_DEV: ${{ secrets.V3_REACT_APP_CHAT_BASE_URL }}
-          REACT_APP_KAKAO_REDIRECT_URI_DEV: ${{ secrets.V3_REACT_APP_KAKAO_REDIRECT_URI }}
-          REACT_APP_BASE_URL_PROD: ${{ secrets.V3_REACT_APP_BASE_URL }}
-          REACT_APP_CHAT_BASE_URL_PROD: ${{ secrets.V3_REACT_APP_CHAT_BASE_URL }}
-          REACT_APP_KAKAO_REDIRECT_URI_PROD: ${{ secrets.V3_REACT_APP_KAKAO_REDIRECT_URI }}
+          REACT_APP_BASE_URL: ${{ secrets.V3_REACT_APP_BASE_URL }}
+          REACT_APP_CHAT_BASE_URL: ${{ secrets.V3_REACT_APP_CHAT_BASE_URL }}
+          REACT_APP_KAKAO_REDIRECT_URI: ${{ secrets.V3_REACT_APP_KAKAO_REDIRECT_URI }}
           REACT_APP_KAKAO_CLIENT_ID: ${{ secrets.REACT_APP_KAKAO_CLIENT_ID }}
         run: CI=false npm run build
 
