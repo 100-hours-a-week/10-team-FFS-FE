@@ -12,6 +12,7 @@ import {
 } from '../api';
 import { IoChevronBack, IoEllipsisHorizontal, IoImageOutline, IoPaperPlane, IoChevronDown } from 'react-icons/io5';
 import './DmChatPage.css';
+import defaultProfile from '../assets/defalt.png';
 
 const MAX_IMAGES = 3;
 const SEND_TIMEOUT = 5000;
@@ -590,11 +591,7 @@ const DmChatPage = () => {
           onClick={() => opponent?.userId && navigate(`/profile/${opponent.userId}`)}
         >
           <div className="dm-chat-page__header-avatar">
-            {opponent?.profileImageUrl ? (
-              <img src={opponent.profileImageUrl} alt={opponent.nickname} />
-            ) : (
-              <div className="dm-chat-page__header-avatar-placeholder" />
-            )}
+            <img src={opponent.profileImageUrl || defaultProfile} alt={opponent.nickname} className="dm-chat-page__header-avatar-placeholder"/>
           </div>
           <span className="dm-chat-page__header-nickname">
             {opponent?.nickname ?? ''}

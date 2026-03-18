@@ -29,6 +29,7 @@ import {
   IoPaperPlaneOutline,
 } from 'react-icons/io5';
 import './FeedDetailPage.css';
+import defaultProfile from '../assets/defalt.png';
 
 const FeedDetailPage = () => {
   const { feedId } = useParams();
@@ -818,11 +819,7 @@ const FeedDetailPage = () => {
             onClick={() => navigate(`/profile/${feed.author.id}`)}
           >
             <div className="feed-detail-page__avatar">
-              {feed.author.profileImage ? (
-                <img src={feed.author.profileImage} alt={feed.author.nickname} />
-              ) : (
-                <div className="feed-detail-page__avatar-placeholder" />
-              )}
+              <img src={feed.author.profileImage || defaultProfile } alt={feed.author.nickname} className="feed-detail-page__avatar-placeholder"/>
             </div>
             <span className="feed-detail-page__nickname">{feed.author.nickname}</span>
           </div>

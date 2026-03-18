@@ -3,6 +3,7 @@ import { FeedCardSkeleton } from '../components/common';
 import { formatNumber } from '../utils/helpers';
 import { IoHeart, IoChatbubbleOutline } from 'react-icons/io5';
 import './FeedListPage.css';
+import defaultProfile from '../assets/defalt.png';
 
 const FeedList = ({ feeds, isLoading, lastElementRef, onFeedClick }) => {
   return (
@@ -25,11 +26,7 @@ const FeedList = ({ feeds, isLoading, lastElementRef, onFeedClick }) => {
           <div className="feed-list-page__item-info">
             <div className="feed-list-page__item-author">
               <div className="feed-list-page__item-avatar">
-                {feed.author.profileImage ? (
-                  <img src={feed.author.profileImage} alt={feed.author.nickname} />
-                ) : (
-                  <div className="feed-list-page__item-avatar-placeholder" />
-                )}
+                <img src={feed.author.profileImage || defaultProfile} alt={feed.author.nickname} className="feed-list-page__item-avatar-placeholder" />
               </div>
               <span className="feed-list-page__item-nickname">
                 {feed.author.nickname}

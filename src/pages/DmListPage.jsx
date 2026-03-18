@@ -5,6 +5,7 @@ import { Spinner } from '../components/common';
 import { getChatRooms } from '../api';
 import { useChatContext } from '../contexts/ChatContext';
 import './DmListPage.css';
+import defaultProfile from '../assets/defalt.png';
 
 // 마지막 메시지 미리보기 텍스트
 const getLastMessagePreview = (room) => {
@@ -209,14 +210,11 @@ const DmListPage = () => {
               onClick={() => handleRoomClick(room)}
             >
               <div className="dm-list-page__room-avatar">
-                {room.opponent?.profileImageUrl ? (
-                  <img
-                    src={room.opponent.profileImageUrl}
+                <img
+                    src={room.opponent.profileImageUrl || defaultProfile}
                     alt={room.opponent.nickname}
+                    className="dm-list-page__room-avatar-placeholder"
                   />
-                ) : (
-                  <div className="dm-list-page__room-avatar-placeholder" />
-                )}
               </div>
               <div className="dm-list-page__room-info">
                 <div className="dm-list-page__room-top">
