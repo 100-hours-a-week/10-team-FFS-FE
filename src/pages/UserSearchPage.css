@@ -63,6 +63,10 @@
   color: var(--color-text-tertiary);
 }
 
+.user-search__input:focus {
+  outline: none;
+}
+
 .user-search__clear {
   display: flex;
   align-items: center;
