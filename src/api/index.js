@@ -906,6 +906,16 @@ export const getUserProfile = async (userId) => {
   return apiRequest(`/users/${userId}`);
 };
 
+/**
+ * 닉네임으로 유저 검색
+ * GET /api/v3/users?nickname={nickname}
+ * @param {string} nickname - 검색할 닉네임
+ * @returns {Promise<{code: number, message: string, data: {userProfiles: Array<{userId, userProfileImageUrl, userNickname}>}}>}
+ */
+export const searchUsers = async (nickname) => {
+  return apiRequest(`/users?nickname=${encodeURIComponent(nickname)}`, {}, BASE_URL_V3);
+};
+
 export const getUserFeeds = async (userId, cursor = null, limit = 12) => {
   let url = `/users/${userId}/feeds?limit=${limit}`
   if(cursor){

@@ -25,6 +25,7 @@ import {
   DmChatPage,
   AIShopPage,
   OutfitChatPage,
+  UserSearchPage,
 } from './pages';
 import { FullPageLoading } from './components/common';
 import './styles/global.css';
@@ -118,6 +119,9 @@ function AppRoutes() {
         {/* 피드 (읽기) */}
         <Route path="/feed" element={<FeedListPage />} />
         <Route path="/feed/:feedId" element={<FeedDetailPage />} />
+
+        {/* 유저 검색 */}
+        <Route path="/search" element={<UserSearchPage />} />
 
         {/* 프로필 (읽기) */}
         <Route path="/profile/:userId" element={<ProfilePage />} />

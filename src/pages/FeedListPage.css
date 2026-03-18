@@ -216,6 +216,13 @@
   color: var(--color-text-primary);
 }
 
+/* 헤더 우상단 버튼 묶음 */
+.feed-list-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 /* 안읽은 메시지 red-dot */
 .feed-list-page__dm-dot {
   position: absolute;

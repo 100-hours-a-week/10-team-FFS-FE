@@ -7,7 +7,7 @@ import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import { getFeeds, getFollowingFeeds } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import { useChatContext } from '../contexts/ChatContext';
-import { IoPaperPlaneOutline, IoLogInOutline } from 'react-icons/io5';
+import { IoPaperPlaneOutline, IoLogInOutline, IoSearchOutline } from 'react-icons/io5';
 import FeedList from './FeedList';
 import './FeedListPage.css';
 
@@ -97,10 +97,16 @@ const FeedListPage = () => {
     isLiked: item.isLiked,
   });
 
-  // 헤더 우상단 요소: 회원은 DM 아이콘, 비회원은 로그인 아이콘
-  const renderHeaderRight = () => {
-    if (isAuthenticated) {
-      return (
+  // 헤더 우상단 요소: 검색 + (회원은 DM, 비회원은 로그인)
+  const renderHeaderRight = () => (
+    <div className="feed-list-page__header-actions">
+      <button
+        className="feed-list-page__header-btn"
+        onClick={() => navigate('/search')}
+      >
+        <IoSearchOutline size={24} />
+      </button>
+      {isAuthenticated ? (
         <button
           className="feed-list-page__header-btn"
           onClick={() => navigate('/dm')}
@@ -108,18 +114,16 @@ const FeedListPage = () => {
           <IoPaperPlaneOutline size={24} />
           {hasUnread && <span className="feed-list-page__dm-dot" />}
         </button>
-      );
-    }
-
-    return (
-      <button
-        className="feed-list-page__header-btn"
-        onClick={() => navigate('/login')}
-      >
-        <IoLogInOutline size={24} />
-      </button>
-    );
-  };
+      ) : (
+        <button
+          className="feed-list-page__header-btn"
+          onClick={() => navigate('/login')}
+        >
+          <IoLogInOutline size={24} />
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className="feed-list-page">

@@ -18,3 +18,4 @@ export { default as DmListPage } from './DmListPage';
 export { default as DmChatPage } from './DmChatPage';
 export { default as AIShopPage } from './AIShopPage';
 export { default as OutfitChatPage } from './OutfitChatPage';
+export { default as UserSearchPage } from './UserSearchPage';
