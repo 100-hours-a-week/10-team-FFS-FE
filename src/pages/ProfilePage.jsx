@@ -289,8 +289,6 @@ const ProfilePage = () => {
 
   if (!profile) return null;
 
-  const displayImage = profile?.userProfileImageUrl || defaultProfile;
-
   return (
     <div className="my-page">
       <Header
@@ -304,7 +302,7 @@ const ProfilePage = () => {
         {/* 프로필 정보 */}
         <div className="my-page__profile">
           <div className="my-page__avatar">
-            <img src={displayImage} alt={profile.nickname} className="my-page__avatar-placeholder" />
+            <img src={profile.profileImage || defaultProfile} alt={profile.nickname} className="my-page__avatar-placeholder"/>
           </div>
 
           <div className="my-page__info">
@@ -421,11 +419,7 @@ const ProfilePage = () => {
                       }}
                     >
                       <div className="follow-modal__avatar">
-                        {followedUser.profileImage ? (
-                          <img src={followedUser.profileImage} alt={followedUser.nickname} />
-                        ) : (
-                          <div className="follow-modal__avatar-placeholder" />
-                        )}
+                        <img src={followedUser.profileImage || defaultProfile} alt={followedUser.nickname} className="follow-modal__avatar-placeholder"/>
                       </div>
                       <span>{followedUser.nickname}</span>
                     </div>
