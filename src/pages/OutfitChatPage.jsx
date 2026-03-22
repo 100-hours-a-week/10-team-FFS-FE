@@ -168,7 +168,7 @@ const OutfitChatPage = () => {
 
   // 타임아웃/취소 관련 refs
   const currentRequestIdRef = useRef(null); // 현재 진행 중인 요청 ID
-  const timeoutRef = useRef(null);          // 30초 타임아웃 핸들
+  const timeoutRef = useRef(null);          // 3분 타임아웃 핸들
   const lastSentTextRef = useRef('');        // 재요청용 마지막 입력값
   const handleTimeoutCancelRef = useRef(null); // 순환 의존성 방지용 ref
 
@@ -347,7 +347,7 @@ const OutfitChatPage = () => {
           clearRequestTimeout();
           timeoutRef.current = setTimeout(() => {
             handleTimeoutCancelRef.current?.();
-          }, 30000);
+          }, 180000);
         }
 
         // 기존 리액션 복구
@@ -386,7 +386,7 @@ const OutfitChatPage = () => {
             clearRequestTimeout();
             timeoutRef.current = setTimeout(() => {
               handleTimeoutCancelRef.current?.();
-            }, 30000);
+            }, 180000);
           }
         } else {
           console.error('세션 상세 조회 실패:', err);
@@ -573,7 +573,7 @@ const OutfitChatPage = () => {
       clearRequestTimeout();
       timeoutRef.current = setTimeout(() => {
         handleTimeoutCancelRef.current?.();
-      }, 30000);
+      }, 180000);
     } catch (err) {
       clearRequestTimeout();
       currentRequestIdRef.current = null;
