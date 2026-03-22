@@ -22,6 +22,7 @@
 .outfit-chat__messages {
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
@@ -39,17 +40,17 @@
 .outfit-chat__bubble-wrap {
   display: flex;
   flex-direction: column;
-  max-width: 85%;
   gap: 4px;
 }
 
 .outfit-chat__bubble-wrap--user {
   align-self: flex-end;
   align-items: flex-end;
+  max-width: 85%;
 }
 
 .outfit-chat__bubble-wrap--ai {
-  align-self: flex-start;
+  align-self: stretch;
   align-items: flex-start;
 }
 
@@ -68,6 +69,7 @@
 }
 
 .outfit-chat__bubble--ai {
+  max-width: 85%;
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   border-bottom-left-radius: var(--radius-sm);
@@ -127,8 +129,28 @@
   color: var(--color-text-tertiary);
 }
 
+/* 타임아웃 재요청 버튼 */
+.outfit-chat__retry-btn {
+  margin-top: 4px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.outfit-chat__retry-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 코디 카드 가로 스크롤 */
 .outfit-chat__cards-scroll {
+  width: 100%;
   display: flex;
   gap: var(--spacing-sm);
   overflow-x: auto;

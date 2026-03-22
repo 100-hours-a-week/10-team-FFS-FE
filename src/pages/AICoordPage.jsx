@@ -145,9 +145,9 @@ const AICoordPage = () => {
     setIsSubmitting(true);
     try {
       const response = await createOutfitRequestV2(trimmedQuery);
-      const { sessionId } = response.data;
+      const { sessionId, requestId } = response.data;
       navigate(`/ai-coordi/${sessionId}`, {
-        state: { initialQuery: trimmedQuery },
+        state: { initialQuery: trimmedQuery, initialRequestId: requestId },
       });
     } catch (err) {
       showError(err.message || '코디 요청에 실패했어요.');

@@ -584,6 +584,17 @@ export const updateOutfitReactionV2 = async (resultId, reaction) => {
 };
 
 /**
+ * 코디 요청 취소
+ * DELETE /api/v2/outfits/requests/{requestId}
+ * @param {number} requestId
+ */
+export const cancelOutfitRequest = async (requestId) => {
+  return apiRequest(`/outfits/requests/${requestId}`, {
+    method: 'DELETE',
+  }, BASE_URL_V2);
+};
+
+/**
  * 코디 요청 상태 복구 조회
  * GET /api/v2/outfits/requests/{requestId}
  * @param {number} requestId
