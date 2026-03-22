@@ -198,7 +198,8 @@ const ClothesUploadPage = () => {
         setOriginalPreviews(images.map(img => img.preview));
         setBatchId(analysisResponse.data.batchId);
         setStep('analysis');
-        success(`${analysisResponse.data.passed}개 이미지 분석을 시작합니다.`);
+        const passedCount = analysisResponse.data?.passed ?? analysisResponse.data?.total ?? fileIds.length;
+        success(`${passedCount}개 이미지 분석을 시작합니다.`);
       }
     } catch (err) {
       console.error('Analysis request failed:', err);

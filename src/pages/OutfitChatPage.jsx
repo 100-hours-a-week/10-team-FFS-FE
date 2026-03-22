@@ -7,6 +7,8 @@ import { useChatContext } from '../contexts/ChatContext';
 import {
   getOutfitSessionDetail,
   createOutfitRequestV2,
+  cancelOutfitRequest,
+  getOutfitRequestStatus,
   updateOutfitReactionV2,
   getOutfitResultClothes,
 } from '../api';
@@ -138,6 +140,7 @@ const OutfitChatPage = () => {
   } = useChatContext();
 
   const initialQuery = location.state?.initialQuery || null;
+  const initialRequestId = location.state?.initialRequestId || null;
 
   // 상태
   const [sessionTitle, setSessionTitle] = useState('AI 코디 추천');
@@ -163,6 +166,12 @@ const OutfitChatPage = () => {
   const scrollContainerRef = useRef(null);
   const hasInitialQuery = useRef(!!initialQuery);
 
+  // 타임아웃/취소 관련 refs
+  const currentRequestIdRef = useRef(null); // 현재 진행 중인 요청 ID
+  const timeoutRef = useRef(null);          // 30초 타임아웃 핸들
+  const lastSentTextRef = useRef('');        // 재요청용 마지막 입력값
+  const handleTimeoutCancelRef = useRef(null); // 순환 의존성 방지용 ref
+
   // 가장 최근 완료된 AI 메시지의 인덱스 (리액션 가능 대상)
   // turnNo 대신 배열 인덱스 기반으로 판단 — WebSocket 이벤트에 turnNo가 없어도 동작
   const latestReactableMsgIdx = useMemo(() => {
@@ -182,6 +191,87 @@ const OutfitChatPage = () => {
       }
     }, 100);
   }, []);
+
+  // 타임아웃 타이머 초기화
+  const clearRequestTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  // 타임아웃 UI 표시 헬퍼
+  const showTimeoutMessage = useCallback(() => {
+    setMessages((prev) => {
+      const updated = prev.filter((m) => m.type !== 'ai-loading');
+      updated.push({
+        type: 'ai-timeout',
+        content: '요청 시간이 초과되었습니다. 다시 시도하시겠어요?',
+        createdAt: new Date().toISOString(),
+      });
+      return updated;
+    });
+    setIsSubmitting(false);
+    scrollToBottom();
+  }, [scrollToBottom]);
+
+  // 30초 타임아웃 시 취소 처리
+  const handleTimeoutCancel = useCallback(async () => {
+    clearRequestTimeout();
+    const reqId = currentRequestIdRef.current;
+    currentRequestIdRef.current = null;
+
+    // requestId가 없으면 취소 API 생략 — 타임아웃 UI만 표시
+    if (!reqId) {
+      showTimeoutMessage();
+      return;
+    }
+
+    try {
+      await cancelOutfitRequest(reqId);
+      // 200: 취소 성공 — 재요청 버튼 표시
+      showTimeoutMessage();
+    } catch (err) {
+      if (err.code === 409) {
+        // 409: 이미 처리됨 — 결과 조회
+        try {
+          const statusRes = await getOutfitRequestStatus(reqId);
+          const turnData = statusRes.data;
+          setMessages((prev) => {
+            const updated = prev.filter((m) => m.type !== 'ai-loading');
+            if (turnData?.status === 'SUCCESS' || turnData?.status === 'COMPLETED') {
+              updated.push({
+                type: 'ai',
+                content: turnData.querySummary || '',
+                outfits: turnData.outfits || [],
+                createdAt: turnData.completedAt || new Date().toISOString(),
+                turnNo: turnData.turnNo,
+              });
+            } else {
+              updated.push({
+                type: 'ai',
+                content: '코디 추천에 실패했어요. 다시 시도해주세요.',
+                outfits: [],
+                createdAt: new Date().toISOString(),
+                isFailed: true,
+              });
+            }
+            return updated;
+          });
+          setIsSubmitting(false);
+          scrollToBottom();
+        } catch {
+          showTimeoutMessage();
+        }
+      } else {
+        // 그 외 오류 — 타임아웃 UI 표시 (재요청 가능)
+        showTimeoutMessage();
+      }
+    }
+  }, [clearRequestTimeout, scrollToBottom, showTimeoutMessage]);
+
+  // handleTimeoutCancel을 ref로 유지 (handleSend의 stale closure 방지)
+  handleTimeoutCancelRef.current = handleTimeoutCancel;
 
   // 옷 상세 정보 조회 헬퍼
   const fetchClothesForOutfits = useCallback(async (outfits) => {
@@ -247,6 +337,19 @@ const OutfitChatPage = () => {
         const converted = turnsToMessages(orderedTurns);
         setMessages(converted);
 
+        // 로드 시 처리 중인 턴이 있으면 타임아웃 설정
+        const hasPendingTurn = converted.some((m) => m.type === 'ai-loading');
+        if (hasPendingTurn) {
+          lastSentTextRef.current = initialQuery || orderedTurns[orderedTurns.length - 1]?.requestText || '';
+          if (initialRequestId) {
+            currentRequestIdRef.current = initialRequestId;
+          }
+          clearRequestTimeout();
+          timeoutRef.current = setTimeout(() => {
+            handleTimeoutCancelRef.current?.();
+          }, 30000);
+        }
+
         // 기존 리액션 복구
         const existingReactions = {};
         orderedTurns.forEach((turn) => {
@@ -276,6 +379,15 @@ const OutfitChatPage = () => {
             },
           ]);
           setSessionTitle(initialQuery);
+          lastSentTextRef.current = initialQuery;
+          // 초기 요청 타임아웃 설정
+          if (initialRequestId) {
+            currentRequestIdRef.current = initialRequestId;
+            clearRequestTimeout();
+            timeoutRef.current = setTimeout(() => {
+              handleTimeoutCancelRef.current?.();
+            }, 30000);
+          }
         } else {
           console.error('세션 상세 조회 실패:', err);
         }
@@ -321,6 +433,8 @@ const OutfitChatPage = () => {
           return prev;
         });
       } else if (status === 'SUCCESS' || status === 'success' || status === 'COMPLETED') {
+        clearRequestTimeout();
+        currentRequestIdRef.current = null;
         const outfits = event.outfits || [];
         setMessages((prev) => {
           const updated = prev.filter((m) => m.type !== 'ai-loading');
@@ -353,6 +467,8 @@ const OutfitChatPage = () => {
           }
         }
       } else if (status === 'CLARIFICATION_NEEDED' || status === 'clarification_needed') {
+        clearRequestTimeout();
+        currentRequestIdRef.current = null;
         setMessages((prev) => {
           const updated = prev.filter((m) => m.type !== 'ai-loading');
           updated.push({
@@ -368,6 +484,8 @@ const OutfitChatPage = () => {
         setIsSubmitting(false);
         scrollToBottom();
       } else if (status === 'FAILED' || status === 'failed') {
+        clearRequestTimeout();
+        currentRequestIdRef.current = null;
         setMessages((prev) => {
           const updated = prev.filter((m) => m.type !== 'ai-loading');
           updated.push({
@@ -382,6 +500,21 @@ const OutfitChatPage = () => {
         });
         setIsSubmitting(false);
         scrollToBottom();
+      } else if (status === 'cancelled') {
+        // 다른 탭/기기에서 취소된 경우
+        clearRequestTimeout();
+        currentRequestIdRef.current = null;
+        setMessages((prev) => {
+          const updated = prev.filter((m) => m.type !== 'ai-loading');
+          updated.push({
+            type: 'ai-timeout',
+            content: '요청이 취소되었습니다. 다시 시도하시겠어요?',
+            createdAt: new Date().toISOString(),
+          });
+          return updated;
+        });
+        setIsSubmitting(false);
+        scrollToBottom();
       }
     };
 
@@ -390,11 +523,18 @@ const OutfitChatPage = () => {
     return () => {
       clearOutfitEventHandler();
     };
-  }, [sessionId, stompConnected, setOutfitEventHandler, clearOutfitEventHandler, scrollToBottom]);
+  }, [sessionId, stompConnected, setOutfitEventHandler, clearOutfitEventHandler, scrollToBottom, clearRequestTimeout]);
 
-  // 메시지 전송
-  const handleSend = useCallback(async () => {
-    const text = inputText.trim();
+  // 언마운트 시 타임아웃 정리
+  useEffect(() => {
+    return () => {
+      clearRequestTimeout();
+    };
+  }, [clearRequestTimeout]);
+
+  // 메시지 전송 (overrideText: 재요청 시 사용)
+  const handleSend = useCallback(async (overrideText) => {
+    const text = (overrideText !== undefined ? overrideText : inputText).trim();
     if (!text || isSubmitting) {
       return;
     }
@@ -405,7 +545,10 @@ const OutfitChatPage = () => {
     }
 
     setIsSubmitting(true);
-    setInputText('');
+    if (overrideText === undefined) {
+      setInputText('');
+    }
+    lastSentTextRef.current = text;
 
     // 사용자 메시지 즉시 추가
     setMessages((prev) => [
@@ -423,8 +566,17 @@ const OutfitChatPage = () => {
     scrollToBottom();
 
     try {
-      await createOutfitRequestV2(text, sessionId);
+      const response = await createOutfitRequestV2(text, sessionId);
+      const newRequestId = response.data?.requestId;
+      currentRequestIdRef.current = newRequestId;
+      // 30초 타임아웃 설정
+      clearRequestTimeout();
+      timeoutRef.current = setTimeout(() => {
+        handleTimeoutCancelRef.current?.();
+      }, 30000);
     } catch (err) {
+      clearRequestTimeout();
+      currentRequestIdRef.current = null;
       setMessages((prev) => {
         const updated = prev.filter((m) => m.type !== 'ai-loading');
         updated.push({
@@ -439,7 +591,17 @@ const OutfitChatPage = () => {
       setIsSubmitting(false);
       scrollToBottom();
     }
-  }, [inputText, isSubmitting, sessionId, showError, scrollToBottom]);
+  }, [inputText, isSubmitting, sessionId, showError, scrollToBottom, clearRequestTimeout]);
+
+  // 타임아웃 후 재요청
+  const handleRetry = useCallback(() => {
+    const text = lastSentTextRef.current;
+    if (!text) {
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.type !== 'ai-timeout'));
+    handleSend(text);
+  }, [handleSend]);
 
   // 리액션 처리
   const handleReaction = useCallback(
@@ -497,6 +659,23 @@ const OutfitChatPage = () => {
                       <span className="outfit-chat__bubble-time">
                         {formatMessageTime(msg.createdAt)}
                       </span>
+                    </div>
+                  );
+                }
+
+                if (msg.type === 'ai-timeout') {
+                  return (
+                    <div key={idx} className="outfit-chat__bubble-wrap outfit-chat__bubble-wrap--ai">
+                      <div className="outfit-chat__bubble outfit-chat__bubble--ai">
+                        <span className="outfit-chat__bubble-text">{msg.content}</span>
+                      </div>
+                      <button
+                        className="outfit-chat__retry-btn"
+                        onClick={handleRetry}
+                        disabled={isSubmitting}
+                      >
+                        다시 시도
+                      </button>
                     </div>
                   );
                 }
